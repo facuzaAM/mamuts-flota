@@ -1,0 +1,16 @@
+{
+  "name": "mamuts-flota",
+  "version": "1.0.0",
+  "description": "MAMUTS Servicios Especiales - Gestión de flota y consumo de combustible",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "bcryptjs": "^2.4.3",
+    "cookie-session": "^2.1.0",
+    "express": "^4.21.2",
+    "multer": "^2.0.1"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(npm install)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3000/api/vales\" -UseBasicParsing -ErrorAction Stop; \"vales sin login: $\\($r.StatusCode\\)\" } catch { \"vales sin login: $\\($_.Exception.Response.StatusCode.value__\\)\" }; $foto = Get-ChildItem \"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\data\\\\uploads\" | Select-Object -First 1 -ExpandProperty Name; \"archivo guardado: $foto\"; try { $r2 = Invoke-WebRequest -Uri \"http://localhost:3000/uploads/$foto\" -UseBasicParsing -ErrorAction Stop; \"foto sin login: $\\($r2.StatusCode\\)\" } catch { \"foto sin login: $\\($_.Exception.Response.StatusCode.value__\\)\" })",
+      "PowerShell($dirs = @\\(\"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\", \"C:\\\\Users\\\\marco\\\\Downloads\", \"C:\\\\Users\\\\marco\\\\Desktop\", \"C:\\\\Users\\\\marco\\\\Pictures\"\\); foreach \\($d in $dirs\\) { Get-ChildItem $d -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match '\\\\.\\(png|jpg|jpeg|svg|webp\\)$' -and $_.LastWriteTime -gt \\(Get-Date\\).AddDays\\(-3\\) } | Select-Object FullName, LastWriteTime })",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\marco\\\\Downloads\\\\LOGO MAMUTS WEB.png\" \"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-web.png\" -Force; Add-Type -AssemblyName System.Drawing; $bmp = [System.Drawing.Bitmap]::FromFile\\(\"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-web.png\"\\); \"dimensiones: $\\($bmp.Width\\) x $\\($bmp.Height\\)\"; $p1 = $bmp.GetPixel\\(100, 100\\); \"fondo esquina: R$\\($p1.R\\) G$\\($p1.G\\) B$\\($p1.B\\)\"; $p2 = $bmp.GetPixel\\(1780, 200\\); \"fondo arriba-centro: R$\\($p2.R\\) G$\\($p2.G\\) B$\\($p2.B\\)\"; $bmp.Dispose\\(\\))",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $src = [System.Drawing.Bitmap]::FromFile\\(\"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-web.png\"\\); $rect = New-Object System.Drawing.Rectangle\\(449, 577, 580, 580\\); $crop = $src.Clone\\($rect, $src.PixelFormat\\); $crop.Save\\(\"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-mark.png\", [System.Drawing.Imaging.ImageFormat]::Png\\); $src.Dispose\\(\\); $crop.Dispose\\(\\); \"recorte guardado\")",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $src = [System.Drawing.Bitmap]::FromFile\\(\"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-web.png\"\\); $rect = New-Object System.Drawing.Rectangle\\(494, 597, 480, 480\\); $crop = $src.Clone\\($rect, $src.PixelFormat\\); $src.Dispose\\(\\); $crop.Save\\(\"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-mark2.png\", [System.Drawing.Imaging.ImageFormat]::Png\\); $crop.Dispose\\(\\); Remove-Item \"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-mark.png\" -Force; Rename-Item \"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-mark2.png\" \"logo-mark.png\"; \"listo\")",
+      "PowerShell(Remove-Item \"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\\\\public\\\\img\\\\logo-mark.svg\" -Force -Confirm:$false)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\marco\\\\Downloads\", \"C:\\\\Users\\\\marco\\\\Desktop\", \"C:\\\\Users\\\\marco\\\\Desktop\\\\MAMUTS\" -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match '\\\\.\\(png|jpg|jpeg|svg|webp\\)$' -and $_.LastWriteTime -gt \\(Get-Date\\).AddHours\\(-6\\) } | Sort-Object LastWriteTime -Descending | Select-Object FullName, LastWriteTime, Length)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $bmp = [System.Drawing.Bitmap]::FromFile\\(\"C:\\\\Users\\\\marco\\\\Downloads\\\\mamuts logo original.png\"\\); \"dimensiones: $\\($bmp.Width\\) x $\\($bmp.Height\\)\"; $p = $bmp.GetPixel\\(50, 50\\); \"fondo: R$\\($p.R\\) G$\\($p.G\\) B$\\($p.B\\)\"; $bmp.Dispose\\(\\))",
+      "PowerShell(npm install @fontsource/inter)",
+      "Bash(PORT=3100 node server.js)",
+      "Bash(echo \"iniciado, PID $!\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s -c /tmp/ck.txt -X POST http://localhost:3100/api/login -H \"Content-Type: application/json\" -d '{\"username\":\"operador1\",\"password\":\"operador2026\"}')",
+      "Bash(curl -s -b /tmp/ck.txt -X POST http://localhost:3100/api/gastos -F \"fecha=2026-07-18\" -F \"monto=50000\" -F \"categoria=Peajes\")",
+      "Bash(kill 272)",
+      "Bash(echo \"PID $!\")",
+      "Bash(curl -s -b /tmp/ck.txt -o /dev/null -w '%{http_code}' -X POST http://localhost:3100/api/gastos -F 'fecha=2026-07-18' -F 'monto=50000' -F 'categoria=Peajes')",
+      "Bash(kill 150)"
+    ]
+  }
+}

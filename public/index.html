@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>MAMUTS · Sistema de Gestión</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="img/logo-mark.png">
+</head>
+<body>
+
+  <!-- ===== Pantalla de login ===== -->
+  <div id="pantalla-login" class="login-fondo oculto">
+    <div class="login-panel">
+      <img src="img/logo.png" alt="MAMUTS Servicios Especiales" class="login-logo">
+      <form id="form-login" class="login-form">
+        <h1>Sistema de Gestión</h1>
+        <p class="login-leyenda">Ingresá con tu usuario para continuar</p>
+        <label>Usuario
+          <input type="text" id="login-usuario" autocomplete="username" required>
+        </label>
+        <label>Contraseña
+          <input type="password" id="login-password" autocomplete="current-password" required>
+        </label>
+        <div id="login-error" class="mensaje-error oculto"></div>
+        <button type="submit" class="btn btn-primario btn-ancho">Ingresar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Aplicación ===== -->
+  <div id="app" class="app oculto">
+    <aside class="sidebar">
+      <div class="sidebar-marca">
+        <img src="img/logo.png" alt="MAMUTS Servicios Especiales" class="sidebar-logo">
+      </div>
+      <nav>
+        <button class="nav-item activo" data-seccion="panel">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg>
+          Panel
+        </button>
+        <button class="nav-item" data-seccion="vehiculos" data-perm-any="ver_vehiculos,editar_vehiculos">
+          <svg viewBox="0 0 24 24"><path d="M1.5 6.5h12v9h-12z"/><path d="M13.5 10h4l3.5 3.5v2h-7.5"/><circle cx="6" cy="17.8" r="1.9"/><circle cx="16.8" cy="17.8" r="1.9"/></svg>
+          Vehículos
+        </button>
+        <button class="nav-item" data-seccion="vales" data-perm-any="cargar_vales,ver_vales,ver_totales_litros">
+          <svg viewBox="0 0 24 24"><path d="M12 3.2 C12 3.2 5.5 10.8 5.5 15 a6.5 6.5 0 0 0 13 0 C18.5 10.8 12 3.2 12 3.2 Z"/></svg>
+          Vales de combustible
+        </button>
+        <button class="nav-item" data-seccion="nomina" data-perm-any="ver_nomina,editar_nomina">
+          <svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><circle cx="8.5" cy="10.8" r="2.1"/><path d="M5.4 16.6c.7-1.8 1.8-2.6 3.1-2.6s2.4.8 3.1 2.6"/><path d="M14.5 9.5h4.5M14.5 13h4.5"/></svg>
+          Nómina
+        </button>
+        <button class="nav-item" data-seccion="contactos" data-perm-any="ver_contactos,editar_contactos">
+          <svg viewBox="0 0 24 24"><circle cx="9" cy="7.5" r="3.2"/><path d="M3.2 19.5c0-3.2 2.6-5.3 5.8-5.3s5.8 2.1 5.8 5.3"/><path d="M15.4 10.4a3.2 3.2 0 1 0-1.6-6"/><path d="M17.2 14.6c2.2.6 3.6 2.4 3.6 4.9"/></svg>
+          Contactos
+        </button>
+        <button class="nav-item" data-seccion="finanzas" data-perm-any="cargar_gastos,ver_gastos,ver_totales_gastos">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8"/><path d="M12 6.8v10.4"/><path d="M15 9.3c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .9-3 2.2 0 3 6 1.6 6 4.5 0 1.3-1.3 2.2-3 2.2-1.4 0-2.6-.6-3.1-1.6"/></svg>
+          Seguimiento contable
+        </button>
+        <button class="nav-item" data-seccion="usuarios" data-solo-admin>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg>
+          Usuarios
+        </button>
+        <button class="nav-item" data-seccion="config">
+          <svg viewBox="0 0 24 24"><path d="M3 6.5h18M3 12h18M3 17.5h18"/><circle cx="9.5" cy="6.5" r="2.2"/><circle cx="15" cy="12" r="2.2"/><circle cx="7.5" cy="17.5" r="2.2"/></svg>
+          Configuración
+        </button>
+      </nav>
+      <div class="sidebar-pie">
+        <span id="usuario-actual"></span>
+        <button id="btn-salir" class="btn btn-chico btn-salir">Salir</button>
+      </div>
+    </aside>
+
+    <main class="contenido">
+
+      <!-- Panel -->
+      <section id="seccion-panel" class="seccion">
+        <h2>Panel general</h2>
+        <div class="tarjetas">
+          <div class="tarjeta" data-perm="ver_vehiculos"><span class="tarjeta-valor" id="stat-vehiculos">–</span><span class="tarjeta-titulo">Vehículos activos</span></div>
+          <div class="tarjeta" data-perm="ver_vales"><span class="tarjeta-valor" id="stat-vales-mes">–</span><span class="tarjeta-titulo">Vales este mes</span></div>
+          <div class="tarjeta" data-perm="ver_totales_litros"><span class="tarjeta-valor" id="stat-litros-mes">–</span><span class="tarjeta-titulo">Litros este mes</span></div>
+          <div class="tarjeta" data-perm="ver_totales_gastos"><span class="tarjeta-valor" id="stat-gasto-mes">–</span><span class="tarjeta-titulo">Gasto este mes</span></div>
+        </div>
+        <div class="panel-columnas">
+          <div class="bloque" data-perm="ver_vales">
+            <h3>Últimos vales</h3>
+            <table class="tabla" id="tabla-ultimos-vales">
+              <thead><tr><th>Fecha</th><th>Vehículo</th><th class="num">Litros</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="bloque" data-perm="ver_totales_litros">
+            <h3>Mayor consumo del mes</h3>
+            <table class="tabla" id="tabla-top-vehiculos">
+              <thead><tr><th>Vehículo</th><th class="num">Litros</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <p id="panel-vacio" class="texto-vacio oculto">No tenés paneles asignados para ver. Usá el menú de la izquierda.</p>
+      </section>
+
+      <!-- Vehículos -->
+      <section id="seccion-vehiculos" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Vehículos</h2>
+          <div class="acciones">
+            <label class="check-inline"><input type="checkbox" id="ver-inactivos"> Mostrar dados de baja</label>
+            <button id="btn-nuevo-vehiculo" class="btn btn-primario" data-perm="editar_vehiculos">+ Agregar vehículo</button>
+          </div>
+        </div>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-vehiculos">
+            <thead>
+              <tr>
+                <th>Patente</th><th>Marca</th><th>Modelo</th><th>Año</th><th>Combustible</th>
+                <th>Chofer</th><th class="num col-consumo">Vales (mes)</th><th class="num col-consumo">Litros (mes)</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="vehiculos-vacio" class="texto-vacio oculto">Todavía no hay vehículos cargados. Agregá el primero con el botón de arriba.</p>
+      </section>
+
+      <!-- Ficha de vehículo -->
+      <section id="seccion-vehiculo-detalle" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <div>
+            <button id="btn-volver-vehiculos" class="btn btn-chico">&larr; Volver a vehículos</button>
+            <h2 id="detalle-titulo" class="detalle-titulo">–</h2>
+          </div>
+          <div class="acciones">
+            <button id="btn-detalle-vales" class="btn" data-perm="ver_vales">Ver sus vales</button>
+            <button id="btn-detalle-editar" class="btn btn-primario" data-perm="editar_vehiculos">Editar vehículo</button>
+          </div>
+        </div>
+
+        <div class="detalle-grilla">
+          <div class="bloque">
+            <h3>Foto</h3>
+            <img id="detalle-foto" class="detalle-foto oculto" alt="Foto del vehículo">
+            <div id="detalle-sin-foto" class="detalle-foto-vacia">Sin foto cargada.<br>Podés agregarla desde "Editar vehículo".</div>
+            <div class="detalle-stats" data-perm="ver_consumo_vehiculo">
+              <div><span id="detalle-litros-mes">–</span><small>Litros este mes</small></div>
+              <div><span id="detalle-cant-vales">–</span><small>Vales (histórico)</small></div>
+              <div><span id="detalle-litros">–</span><small>Litros (histórico)</small></div>
+            </div>
+          </div>
+          <div class="bloque">
+            <h3>Datos generales</h3>
+            <dl class="lista-datos" id="detalle-datos"></dl>
+          </div>
+        </div>
+
+        <div class="bloque bloque-margen">
+          <div class="bloque-encabezado">
+            <h3>Datos técnicos y repuestos</h3>
+            <button id="btn-nuevo-tecnico" class="btn btn-chico btn-primario" data-perm="editar_vehiculos">+ Agregar dato</button>
+          </div>
+          <p class="texto-ayuda">Guardá acá los códigos de filtros, aceites, correas, batería, cubiertas y todo lo que sirva para comprar repuestos o mandar a arreglar el vehículo.</p>
+          <table class="tabla" id="tabla-tecnicos">
+            <thead><tr><th>Tipo</th><th>Código</th><th>Marca</th><th>Notas</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <p id="tecnicos-vacio" class="texto-vacio oculto">Sin datos técnicos cargados todavía.</p>
+        </div>
+
+        <div class="bloque bloque-margen" data-perm="ver_consumo_vehiculo">
+          <h3>Últimos vales de combustible</h3>
+          <table class="tabla" id="tabla-detalle-vales">
+            <thead><tr><th>Fecha</th><th class="num">Litros</th><th>N° vale</th><th>Recibió</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <p id="detalle-vales-vacio" class="texto-vacio oculto">Este vehículo no tiene vales registrados.</p>
+        </div>
+      </section>
+
+      <!-- Vales -->
+      <section id="seccion-vales" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Vales de combustible</h2>
+          <button id="btn-nuevo-vale" class="btn btn-primario" data-perm="cargar_vales">+ Registrar vale</button>
+        </div>
+        <div class="filtros">
+          <label>Vehículo
+            <select id="filtro-vehiculo"><option value="">Todos</option></select>
+          </label>
+          <label>Desde <input type="date" id="filtro-desde"></label>
+          <label>Hasta <input type="date" id="filtro-hasta"></label>
+          <button id="btn-limpiar-filtros" class="btn btn-chico">Limpiar</button>
+          <span id="filtro-resumen" class="filtro-resumen"></span>
+        </div>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-vales">
+            <thead>
+              <tr><th>Fecha</th><th>Vehículo</th><th>Combustible</th><th class="num">Litros</th><th class="num">Monto</th><th>N° vale</th><th>Comprobante</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="vales-vacio" class="texto-vacio oculto">No hay vales registrados para este filtro.</p>
+      </section>
+
+      <!-- Nómina -->
+      <section id="seccion-nomina" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Nómina</h2>
+          <div class="acciones">
+            <label class="check-inline"><input type="checkbox" id="ver-bajas-nomina"> Mostrar dados de baja</label>
+            <button id="btn-nuevo-empleado" class="btn btn-primario" data-perm="editar_nomina">+ Agregar persona</button>
+          </div>
+        </div>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-empleados">
+            <thead><tr><th>Nombre</th><th>Puesto</th><th>Teléfono</th><th>Documentación</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="empleados-vacio" class="texto-vacio oculto">Todavía no hay personas cargadas.</p>
+      </section>
+
+      <!-- Legajo -->
+      <section id="seccion-empleado-detalle" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <div>
+            <button id="btn-volver-nomina" class="btn btn-chico">&larr; Volver a nómina</button>
+            <h2 id="emp-titulo" class="detalle-titulo">–</h2>
+          </div>
+          <button id="btn-emp-editar" class="btn btn-primario" data-perm="editar_nomina">Editar datos</button>
+        </div>
+        <div class="bloque">
+          <h3>Datos</h3>
+          <dl class="lista-datos" id="emp-datos"></dl>
+        </div>
+        <div class="bloque bloque-margen">
+          <div class="bloque-encabezado">
+            <h3>Documentación</h3>
+            <button id="btn-nuevo-doc" class="btn btn-chico btn-primario" data-perm="editar_nomina">+ Agregar documento</button>
+          </div>
+          <p class="texto-ayuda">DNI, licencia de conducir, ART, exámenes médicos, contrato… Si el documento vence, cargale la fecha y el sistema te avisa.</p>
+          <div class="tabla-scroll">
+            <table class="tabla" id="tabla-docs">
+              <thead><tr><th>Tipo</th><th>Vencimiento</th><th>Archivo</th><th>Notas</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="docs-vacio" class="texto-vacio oculto">Sin documentos cargados.</p>
+        </div>
+      </section>
+
+      <!-- Contactos -->
+      <section id="seccion-contactos" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Contactos</h2>
+          <button id="btn-nuevo-contacto" class="btn btn-primario" data-perm="editar_contactos">+ Agregar contacto</button>
+        </div>
+        <div class="filtros">
+          <label>Buscar <input type="text" id="buscar-contacto" placeholder="Nombre, empresa, teléfono…"></label>
+          <label>Categoría
+            <select id="filtro-categoria-contacto"><option value="">Todas</option></select>
+          </label>
+        </div>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-contactos">
+            <thead>
+              <tr><th>Nombre</th><th>Empresa</th><th>Teléfono</th><th>País</th><th>Categoría</th><th>Notas</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="contactos-vacio" class="texto-vacio oculto">No hay contactos cargados todavía.</p>
+      </section>
+
+      <!-- Seguimiento contable -->
+      <section id="seccion-finanzas" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Seguimiento contable</h2>
+          <button id="btn-nuevo-gasto" class="btn btn-primario" data-perm="cargar_gastos">+ Registrar gasto</button>
+        </div>
+
+        <div class="reloj-caja">
+          <span id="reloj-fecha">–</span>
+          <span id="reloj-hora" class="reloj-hora">–</span>
+        </div>
+
+        <div class="filtros">
+          <label>Mes <input type="month" id="filtro-mes-gastos"></label>
+          <span class="filtro-resumen" id="gastos-resumen-filtro"></span>
+        </div>
+
+        <div class="tarjetas">
+          <div class="tarjeta" data-perm="ver_totales_gastos"><span class="tarjeta-valor" id="stat-gasto-mes-fin">–</span><span class="tarjeta-titulo" id="stat-gasto-mes-titulo">Gasto del mes</span></div>
+          <div class="tarjeta" data-perm="ver_gastos"><span class="tarjeta-valor" id="stat-gastos-cantidad">–</span><span class="tarjeta-titulo">Gastos registrados en el mes</span></div>
+          <div class="tarjeta" data-perm="ver_totales_gastos"><span class="tarjeta-valor" id="stat-gasto-anio">–</span><span class="tarjeta-titulo" id="stat-gasto-anio-titulo">Total del año</span></div>
+        </div>
+
+        <div class="panel-columnas">
+          <div class="bloque" data-perm="ver_gastos">
+            <h3 id="titulo-gastos-mes">Gastos del mes</h3>
+            <div class="tabla-scroll">
+              <table class="tabla" id="tabla-gastos">
+                <thead><tr><th>Fecha</th><th>Categoría</th><th>Detalle</th><th class="num">Monto</th><th>Comp.</th><th></th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p id="gastos-vacio" class="texto-vacio oculto">No hay gastos registrados en este mes.</p>
+          </div>
+          <div data-perm="ver_totales_gastos">
+            <div class="bloque">
+              <h3 id="titulo-categorias">Por categoría (año)</h3>
+              <table class="tabla" id="tabla-gastos-categoria">
+                <thead><tr><th>Categoría</th><th class="num">Total</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="bloque bloque-margen">
+              <h3 id="titulo-meses">Mes a mes (año)</h3>
+              <table class="tabla" id="tabla-gastos-mes-a-mes">
+                <thead><tr><th>Mes</th><th class="num">Gastos</th><th class="num">Total</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Usuarios (solo admin) -->
+      <section id="seccion-usuarios" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Usuarios</h2>
+          <button id="btn-nuevo-usuario" class="btn btn-primario">+ Crear usuario</button>
+        </div>
+        <p class="texto-ayuda">Creá cuentas para tu equipo y elegí exactamente qué puede hacer y ver cada una. El administrador tiene acceso a todo.</p>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-usuarios">
+            <thead>
+              <tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Permisos</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Configuración -->
+      <section id="seccion-config" class="seccion oculto">
+        <h2>Configuración</h2>
+        <div class="bloque bloque-angosto">
+          <h3>Cambiar mi contraseña</h3>
+          <form id="form-password">
+            <label>Contraseña actual <input type="password" id="pass-actual" autocomplete="current-password" required></label>
+            <label>Nueva contraseña (mínimo 8 caracteres) <input type="password" id="pass-nueva" autocomplete="new-password" required minlength="8"></label>
+            <label>Repetir nueva contraseña <input type="password" id="pass-repetir" autocomplete="new-password" required></label>
+            <div id="password-mensaje" class="oculto"></div>
+            <button type="submit" class="btn btn-primario">Guardar</button>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===== Modal vehículo ===== -->
+  <dialog id="modal-vehiculo" class="modal-amplio">
+    <form id="form-vehiculo" method="dialog">
+      <h3 id="modal-vehiculo-titulo">Agregar vehículo</h3>
+      <input type="hidden" id="vehiculo-id">
+      <div class="grilla-2">
+        <label>Marca * <input type="text" id="vehiculo-marca" required placeholder="Ej: Ford"></label>
+        <label>Modelo * <input type="text" id="vehiculo-modelo" required placeholder="Ej: F-4000"></label>
+        <label>Patente * <input type="text" id="vehiculo-patente" required placeholder="Ej: AB123CD" style="text-transform: uppercase"></label>
+        <label>Año <input type="number" id="vehiculo-anio" min="1950" max="2100" placeholder="Ej: 2019"></label>
+        <label>Combustible
+          <select id="vehiculo-combustible">
+            <option>Diesel</option><option>Nafta</option><option>GNC</option><option>Otro</option>
+          </select>
+        </label>
+        <label>Kilometraje <input type="number" id="vehiculo-km" min="0" placeholder="Ej: 150000"></label>
+      </div>
+      <label>Chofer habitual <input type="text" id="vehiculo-chofer" list="lista-empleados" placeholder="Nombre del chofer (opcional)"></label>
+      <label>Observaciones <textarea id="vehiculo-notas" rows="3" placeholder="Notas u observaciones del vehículo (opcional)"></textarea></label>
+      <label class="campo-archivo">Foto del vehículo (opcional)
+        <input type="file" id="vehiculo-foto" accept="image/jpeg,image/png,image/webp">
+      </label>
+      <img id="vehiculo-foto-preview" class="foto-preview oculto" alt="Vista previa de la foto">
+      <label class="check-inline oculto" id="vehiculo-quitar-foto-caja">
+        <input type="checkbox" id="vehiculo-quitar-foto"> Quitar la foto actual
+      </label>
+      <div id="vehiculo-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal dato técnico ===== -->
+  <dialog id="modal-tecnico">
+    <form id="form-tecnico" method="dialog">
+      <h3 id="modal-tecnico-titulo">Agregar dato técnico</h3>
+      <input type="hidden" id="tecnico-id">
+      <div class="grilla-2">
+        <label>Tipo *
+          <input type="text" id="tecnico-tipo" required list="tipos-tecnicos" placeholder="Ej: Filtro de aceite">
+          <datalist id="tipos-tecnicos">
+            <option>Filtro de aceite</option><option>Filtro de aire</option><option>Filtro de combustible</option>
+            <option>Filtro separador</option><option>Filtro de cabina</option><option>Filtro hidráulico</option>
+            <option>Aceite de motor</option><option>Aceite hidráulico</option><option>Batería</option>
+            <option>Cubiertas</option><option>Correa</option><option>Bujías</option>
+            <option>N° de chasis</option><option>N° de motor</option><option>Otro</option>
+          </datalist>
+        </label>
+        <label>Código / medida <input type="text" id="tecnico-codigo" placeholder="Ej: W950/26 o 12.00R20"></label>
+      </div>
+      <label>Marca <input type="text" id="tecnico-marca" placeholder="Ej: MANN, Fram (opcional)"></label>
+      <label>Notas <textarea id="tecnico-notas" rows="2" placeholder="Opcional"></textarea></label>
+      <div id="tecnico-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal vale ===== -->
+  <dialog id="modal-vale">
+    <form id="form-vale" method="dialog">
+      <h3>Registrar vale de combustible</h3>
+      <div class="grilla-2">
+        <label>Vehículo * <select id="vale-vehiculo" required></select></label>
+        <label>Fecha de entrega * <input type="date" id="vale-fecha" required></label>
+        <label>Litros * <input type="number" id="vale-litros" step="0.01" min="0.01" required placeholder="Ej: 50"></label>
+        <label>Monto del vale (ARS)
+          <input type="text" id="vale-monto" inputmode="decimal" placeholder="Ej: 65.000 (opcional)">
+          <small class="hint-monto" id="vale-monto-hint"></small>
+        </label>
+        <label>Combustible
+          <select id="vale-tipo"><option value="">–</option><option>Gasoil</option><option>Nafta</option><option>GNC</option></select>
+        </label>
+        <label>Grado
+          <select id="vale-grado"><option value="">–</option><option>Común</option><option>Premium</option></select>
+        </label>
+        <label>N° de vale <input type="text" id="vale-numero" placeholder="Opcional"></label>
+        <label>Quién lo recibió <input type="text" id="vale-receptor" list="lista-empleados" placeholder="Nombre (opcional)"></label>
+      </div>
+      <datalist id="lista-empleados"></datalist>
+      <label>Observaciones <textarea id="vale-observaciones" rows="2" placeholder="Opcional"></textarea></label>
+      <label class="campo-archivo">Foto o escaneo del vale (JPG, PNG o PDF)
+        <input type="file" id="vale-foto" accept="image/jpeg,image/png,image/webp,application/pdf">
+      </label>
+      <img id="vale-foto-preview" class="foto-preview oculto" alt="Vista previa del comprobante">
+      <div id="vale-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario" id="btn-guardar-vale">Guardar vale</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal contacto ===== -->
+  <dialog id="modal-contacto">
+    <form id="form-contacto" method="dialog">
+      <h3 id="modal-contacto-titulo">Agregar contacto</h3>
+      <input type="hidden" id="contacto-id">
+      <div class="grilla-2">
+        <label>Nombre * <input type="text" id="contacto-nombre" required placeholder="Ej: Carlos Gómez"></label>
+        <label>Empresa <input type="text" id="contacto-empresa" placeholder="Opcional"></label>
+        <label>Teléfono <input type="text" id="contacto-telefono" placeholder="Ej: +54 9 11 5555-5555"></label>
+        <label>País <input type="text" id="contacto-pais" list="paises" placeholder="Ej: Argentina">
+          <datalist id="paises">
+            <option>Argentina</option><option>Chile</option><option>Uruguay</option><option>Paraguay</option>
+            <option>Bolivia</option><option>Brasil</option><option>Perú</option><option>Otro</option>
+          </datalist>
+        </label>
+      </div>
+      <label>Categoría
+        <input type="text" id="contacto-categoria" list="categorias-contacto" placeholder="Ej: Mecánico, Proveedor, Chofer…">
+        <datalist id="categorias-contacto">
+          <option>Proveedor</option><option>Mecánico / Taller</option><option>Repuestos</option>
+          <option>Cliente</option><option>Chofer</option><option>Combustible</option>
+          <option>Seguro</option><option>Contador</option><option>Otro</option>
+        </datalist>
+      </label>
+      <label>Notas <textarea id="contacto-notas" rows="2" placeholder="Opcional"></textarea></label>
+      <div id="contacto-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal gasto ===== -->
+  <dialog id="modal-gasto">
+    <form id="form-gasto" method="dialog">
+      <h3 id="modal-gasto-titulo">Registrar gasto</h3>
+      <input type="hidden" id="gasto-id">
+      <div class="grilla-2">
+        <label>Fecha * <input type="date" id="gasto-fecha" required></label>
+        <label>Monto (ARS) *
+          <input type="text" id="gasto-monto" inputmode="decimal" required placeholder="Ej: 150.000">
+          <small class="hint-monto" id="gasto-monto-hint"></small>
+        </label>
+        <label>Categoría *
+          <select id="gasto-categoria" required>
+            <option value="">Elegir…</option>
+            <option>Combustible</option><option>Repuestos</option><option>Mantenimiento y reparaciones</option>
+            <option>Sueldos</option><option>Seguros</option><option>Impuestos y tasas</option>
+            <option>Peajes</option><option>Alquileres</option><option>Otros</option>
+          </select>
+        </label>
+        <label>Vehículo (opcional) <select id="gasto-vehiculo"><option value="">Ninguno</option></select></label>
+      </div>
+      <label>Detalle <input type="text" id="gasto-descripcion" placeholder="Ej: Cambio de aceite y filtros (opcional)"></label>
+      <label class="campo-archivo">Comprobante (JPG, PNG o PDF, opcional)
+        <input type="file" id="gasto-comprobante" accept="image/jpeg,image/png,image/webp,application/pdf">
+      </label>
+      <div id="gasto-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal empleado ===== -->
+  <dialog id="modal-empleado" class="modal-amplio">
+    <form id="form-empleado" method="dialog">
+      <h3 id="modal-empleado-titulo">Agregar persona</h3>
+      <input type="hidden" id="emp-id">
+      <div class="grilla-2">
+        <label>Nombre y apellido * <input type="text" id="emp-nombre" required placeholder="Ej: Juan Pérez"></label>
+        <label>DNI / CUIL <input type="text" id="emp-dni" placeholder="Opcional"></label>
+        <label>Teléfono <input type="text" id="emp-telefono" placeholder="Opcional"></label>
+        <label>Fecha de nacimiento <input type="date" id="emp-nacimiento"></label>
+        <label>Puesto <input type="text" id="emp-puesto" list="puestos" placeholder="Ej: Chofer">
+          <datalist id="puestos"><option>Chofer</option><option>Operario</option><option>Mecánico</option><option>Administrativo</option><option>Encargado</option><option>Otro</option></datalist>
+        </label>
+        <label>Fecha de ingreso <input type="date" id="emp-ingreso"></label>
+      </div>
+      <label>Dirección <input type="text" id="emp-direccion" placeholder="Opcional"></label>
+      <label>Contacto de emergencia <input type="text" id="emp-emergencia" placeholder="Nombre y teléfono (opcional)"></label>
+      <label>Notas <textarea id="emp-notas" rows="2" placeholder="Opcional"></textarea></label>
+      <div id="emp-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal documento ===== -->
+  <dialog id="modal-doc">
+    <form id="form-doc" method="dialog">
+      <h3 id="modal-doc-titulo">Agregar documento</h3>
+      <input type="hidden" id="doc-id">
+      <div class="grilla-2">
+        <label>Tipo * <input type="text" id="doc-tipo" required list="tipos-doc" placeholder="Ej: Licencia de conducir">
+          <datalist id="tipos-doc">
+            <option>DNI</option><option>Licencia de conducir</option><option>ART</option><option>Seguro</option>
+            <option>Examen médico</option><option>Contrato</option><option>Carnet cargas peligrosas</option><option>Otro</option>
+          </datalist>
+        </label>
+        <label>Vencimiento <input type="date" id="doc-vencimiento"></label>
+      </div>
+      <label class="campo-archivo">Archivo (JPG, PNG o PDF, opcional)
+        <input type="file" id="doc-archivo" accept="image/jpeg,image/png,image/webp,application/pdf">
+      </label>
+      <label>Notas <textarea id="doc-notas" rows="2" placeholder="Opcional"></textarea></label>
+      <div id="doc-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal usuario ===== -->
+  <dialog id="modal-usuario" class="modal-amplio">
+    <form id="form-usuario" method="dialog">
+      <h3 id="modal-usuario-titulo">Crear usuario</h3>
+      <input type="hidden" id="usuario-id">
+      <div class="grilla-2">
+        <label>Usuario (para ingresar) * <input type="text" id="usuario-username" required autocomplete="off" placeholder="Ej: jperez"></label>
+        <label>Nombre y apellido <input type="text" id="usuario-nombre" placeholder="Ej: Juan Pérez (opcional)"></label>
+      </div>
+      <label id="usuario-password-caja">Contraseña * (mínimo 8 caracteres)
+        <input type="password" id="usuario-password" autocomplete="new-password" placeholder="Escribí una contraseña">
+      </label>
+      <label>Tipo de cuenta
+        <select id="usuario-rol">
+          <option value="operador">Personalizada (elegís los permisos abajo)</option>
+          <option value="admin">Administrador (acceso total)</option>
+        </select>
+      </label>
+      <div id="usuario-permisos-caja">
+        <div class="permisos-encabezado">
+          <strong>Permisos de esta cuenta</strong>
+          <div class="permisos-atajos">
+            <button type="button" class="btn btn-chico" id="btn-marcar-todos">Marcar todos</button>
+            <button type="button" class="btn btn-chico" id="btn-desmarcar-todos">Ninguno</button>
+          </div>
+        </div>
+        <div id="usuario-permisos"></div>
+      </div>
+      <div id="usuario-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal cambiar contraseña de usuario ===== -->
+  <dialog id="modal-usuario-pass">
+    <form id="form-usuario-pass" method="dialog">
+      <h3>Cambiar contraseña</h3>
+      <input type="hidden" id="usuario-pass-id">
+      <p class="texto-ayuda" id="usuario-pass-nombre"></p>
+      <label>Nueva contraseña (mínimo 8 caracteres)
+        <input type="password" id="usuario-pass-nueva" autocomplete="new-password" required minlength="8">
+      </label>
+      <div id="usuario-pass-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal ver comprobante ===== -->
+  <dialog id="modal-foto" class="modal-foto">
+    <img id="foto-grande" alt="Comprobante">
+    <div class="modal-botones">
+      <button type="button" class="btn" data-cerrar>Cerrar</button>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
