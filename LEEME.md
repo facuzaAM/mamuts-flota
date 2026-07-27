@@ -8,13 +8,14 @@ Hacé doble clic en **`Iniciar MAMUTS.bat`**. Se abre el navegador solo en
 `http://localhost:3000`. Mientras la ventana negra esté abierta, la app funciona;
 para apagarla, cerrá esa ventana.
 
-## Credenciales iniciales
+## Acceso
 
-- **Usuario:** `admin`
-- **Contraseña:** `mamuts2026`
+El usuario administrador es `admin`. La contraseña te la pasa por un canal
+privado quien administra el sistema; no se publica en este archivo porque el
+repositorio es de acceso público.
 
 > ⚠️ IMPORTANTE: cambiá la contraseña la primera vez que entres, desde la
-> sección **Configuración**.
+> sección **Configuración**, y no la escribas nunca en este repositorio.
 
 ## Qué hace
 
