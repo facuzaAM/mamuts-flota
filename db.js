@@ -1,5 +1,6 @@
 const { DatabaseSync } = require('node:sqlite');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
@@ -123,13 +124,21 @@ asegurarColumna('vales', 'tipo_combustible', 'tipo_combustible TEXT');
 asegurarColumna('vales', 'grado', 'grado TEXT');
 asegurarColumna('vales', 'monto', 'monto REAL');
 
-// Usuario administrador inicial (cambiar la contraseña desde Configuración)
+// Usuario administrador inicial. La contraseña se genera al azar en el primer
+// arranque y se muestra una sola vez: no puede quedar escrita en el código
+// porque el repositorio es público.
 const adminExiste = db.prepare('SELECT COUNT(*) AS n FROM usuarios').get().n > 0;
 if (!adminExiste) {
-  const hash = bcrypt.hashSync('mamuts2026', 10);
+  const passwordInicial = crypto.randomBytes(12).toString('base64url');
   db.prepare('INSERT INTO usuarios (username, password_hash, rol) VALUES (?, ?, ?)')
-    .run('admin', hash, 'admin');
-  console.log('Usuario inicial creado -> usuario: admin / contraseña: mamuts2026');
+    .run('admin', bcrypt.hashSync(passwordInicial, 10), 'admin');
+  console.log('\n' + '='.repeat(58));
+  console.log('  Usuario inicial creado');
+  console.log('  usuario:     admin');
+  console.log(`  contraseña:  ${passwordInicial}`);
+  console.log('  Anotala ahora: no se vuelve a mostrar.');
+  console.log('  Cambiala desde Configuración al entrar.');
+  console.log('='.repeat(58) + '\n');
 }
 
 module.exports = db;
