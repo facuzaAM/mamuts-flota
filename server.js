@@ -327,7 +327,7 @@ function validarVehiculo(body) {
       tipo_combustible: String(body.tipo_combustible || 'Diesel').trim(),
       kilometraje: Number.isFinite(kilometraje) ? kilometraje : null,
       chofer: String(body.chofer || '').trim() || null,
-      propiedad: ['Propio', 'Alquilado'].includes(body.propiedad) ? body.propiedad : 'Propio',
+      propiedad: ['Propio', 'Alquilado', 'Particular'].includes(body.propiedad) ? body.propiedad : 'Propio',
       notas: String(body.notas || '').trim() || null
     }
   };

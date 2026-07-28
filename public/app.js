@@ -29,10 +29,14 @@ async function api(url, opciones = {}) {
   return datos;
 }
 
-// Propio o alquilado: el alquilado se destaca para no confundirlo con la flota propia
+// Los que no son de la empresa se destacan para no confundirlos con la flota propia
 function etiquetaPropiedad(propiedad) {
-  const alquilado = propiedad === 'Alquilado';
-  return `<span class="etiqueta ${alquilado ? 'etiqueta-alerta' : 'etiqueta-categoria'}">${escapar(propiedad || 'Propio')}</span>`;
+  const valor = propiedad || 'Propio';
+  const clase = {
+    'Alquilado': 'etiqueta-alerta',
+    'Particular': 'etiqueta-baja'
+  }[valor] || 'etiqueta-categoria';
+  return `<span class="etiqueta ${clase}">${escapar(valor)}</span>`;
 }
 
 function formatearLitros(n) {
