@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>MAMUTS · Módulos Habitacionales</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="img/logo-mark.png">
+</head>
+<body>
+
+  <!-- Cortina: se muestra hasta confirmar que hay sesión iniciada -->
+  <div id="verificando" class="verificando">Verificando sesión…</div>
+
+  <div id="app" class="app oculto">
+    <aside class="sidebar">
+      <div class="sidebar-marca">
+        <img src="img/logo.png" alt="MAMUTS Servicios Especiales" class="sidebar-logo">
+        <span class="sidebar-actividad">Módulos Habitacionales</span>
+      </div>
+      <nav>
+        <button class="nav-item activo" data-seccion="resumen">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg>
+          Resumen
+        </button>
+      </nav>
+      <div class="sidebar-pie">
+        <span id="usuario-actual"></span>
+        <a href="index.html" class="btn btn-chico btn-salir">← Flota</a>
+      </div>
+    </aside>
+
+    <main class="contenido">
+      <section id="seccion-resumen" class="seccion">
+        <div class="seccion-encabezado">
+          <h2>Módulos Habitacionales</h2>
+        </div>
+        <p class="seccion-leyenda">Control de reparación de casillas. Sistema propio, separado de la gestión de flota.</p>
+        <p class="texto-vacio">Todavía no hay nada cargado. Definí con tu equipo qué datos hay que llevar de cada módulo y se arma acá.</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="modulos.js"></script>
+</body>
+</html>
