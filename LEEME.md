@@ -37,9 +37,10 @@ repositorio es de acceso público.
     costo, comprobante y estado (pedido → recibido → consumido).
   - *Documentación:* planos, manuales, certificados y checklists de cada módulo.
 - **Vehículos:** alta, edición y baja de los vehículos de la empresa
-  (marca, modelo, patente, año, combustible, kilometraje, chofer, observaciones
-  y foto opcional). La baja es "lógica": el vehículo deja de aparecer pero su
-  historial se conserva.
+  (marca, modelo, patente, año, combustible, kilometraje, chofer, **si es propio
+  o alquilado**, observaciones y foto opcional). Los alquilados se marcan en
+  amarillo en el listado para distinguirlos de la flota propia. La baja es
+  "lógica": el vehículo deja de aparecer pero su historial se conserva.
 - **Ficha del vehículo (botón "Ver"):** todos los datos completos, la foto, y una
   base de **datos técnicos y repuestos** (filtros con su código, aceites, batería,
   cubiertas, n° de chasis/motor, etc.) para comprar repuestos o mandar a arreglar.

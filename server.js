@@ -327,6 +327,7 @@ function validarVehiculo(body) {
       tipo_combustible: String(body.tipo_combustible || 'Diesel').trim(),
       kilometraje: Number.isFinite(kilometraje) ? kilometraje : null,
       chofer: String(body.chofer || '').trim() || null,
+      propiedad: ['Propio', 'Alquilado'].includes(body.propiedad) ? body.propiedad : 'Propio',
       notas: String(body.notas || '').trim() || null
     }
   };
@@ -342,8 +343,8 @@ app.post('/api/vehiculos', requiereLogin, requierePermiso('editar_vehiculos'), (
     }
     try {
       const info = db.prepare(`
-        INSERT INTO vehiculos (marca, modelo, patente, anio, tipo_combustible, kilometraje, chofer, notas, foto_archivo)
-        VALUES (@marca, @modelo, @patente, @anio, @tipo_combustible, @kilometraje, @chofer, @notas, @foto_archivo)
+        INSERT INTO vehiculos (marca, modelo, patente, anio, tipo_combustible, kilometraje, chofer, propiedad, notas, foto_archivo)
+        VALUES (@marca, @modelo, @patente, @anio, @tipo_combustible, @kilometraje, @chofer, @propiedad, @notas, @foto_archivo)
       `).run({ ...v.datos, foto_archivo: req.file ? req.file.filename : null });
       res.json({ ok: true, id: info.lastInsertRowid });
     } catch (e) {
@@ -380,7 +381,8 @@ app.put('/api/vehiculos/:id', requiereLogin, requierePermiso('editar_vehiculos')
     try {
       db.prepare(`
         UPDATE vehiculos SET marca=@marca, modelo=@modelo, patente=@patente, anio=@anio,
-          tipo_combustible=@tipo_combustible, kilometraje=@kilometraje, chofer=@chofer, notas=@notas, foto_archivo=@foto_archivo
+          tipo_combustible=@tipo_combustible, kilometraje=@kilometraje, chofer=@chofer, propiedad=@propiedad,
+          notas=@notas, foto_archivo=@foto_archivo
         WHERE id=@id
       `).run({ ...v.datos, foto_archivo: foto, id: actual.id });
       res.json({ ok: true });

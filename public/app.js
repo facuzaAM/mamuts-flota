@@ -29,6 +29,12 @@ async function api(url, opciones = {}) {
   return datos;
 }
 
+// Propio o alquilado: el alquilado se destaca para no confundirlo con la flota propia
+function etiquetaPropiedad(propiedad) {
+  const alquilado = propiedad === 'Alquilado';
+  return `<span class="etiqueta ${alquilado ? 'etiqueta-alerta' : 'etiqueta-categoria'}">${escapar(propiedad || 'Propio')}</span>`;
+}
+
 function formatearLitros(n) {
   return Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 }) + ' L';
 }
@@ -255,6 +261,7 @@ async function cargarVehiculos() {
       <td>${escapar(v.modelo)}</td>
       <td>${v.anio || ''}</td>
       <td>${escapar(v.tipo_combustible)}</td>
+      <td>${etiquetaPropiedad(v.propiedad)}</td>
       <td>${escapar(v.chofer || '')}</td>
       <td class="num col-consumo">${v.cant_vales == null ? '' : v.cant_vales}</td>
       <td class="num col-consumo">${v.total_litros == null ? '' : formatearLitros(v.total_litros)}</td>
@@ -295,6 +302,7 @@ function abrirModalVehiculo(v) {
   $('#vehiculo-anio').value = v && v.anio ? v.anio : '';
   $('#vehiculo-combustible').value = v ? v.tipo_combustible : 'Diesel';
   $('#vehiculo-km').value = v && v.kilometraje != null ? v.kilometraje : '';
+  $('#vehiculo-propiedad').value = v && v.propiedad ? v.propiedad : 'Propio';
   $('#vehiculo-chofer').value = v && v.chofer ? v.chofer : '';
   $('#vehiculo-notas').value = v && v.notas ? v.notas : '';
   $('#vehiculo-foto').value = '';
@@ -322,6 +330,7 @@ $('#form-vehiculo').addEventListener('submit', async (e) => {
   datos.append('anio', $('#vehiculo-anio').value);
   datos.append('tipo_combustible', $('#vehiculo-combustible').value);
   datos.append('kilometraje', $('#vehiculo-km').value);
+  datos.append('propiedad', $('#vehiculo-propiedad').value);
   datos.append('chofer', $('#vehiculo-chofer').value);
   datos.append('notas', $('#vehiculo-notas').value);
   if ($('#vehiculo-quitar-foto').checked) datos.append('quitar_foto', '1');
@@ -360,6 +369,7 @@ async function abrirDetalleVehiculo(id) {
   const datos = [
     ['Patente', v.patente], ['Marca', v.marca], ['Modelo', v.modelo],
     ['Año', v.anio || '–'], ['Combustible', v.tipo_combustible],
+    ['Propiedad', v.propiedad || 'Propio'],
     ['Kilometraje', v.kilometraje != null ? v.kilometraje.toLocaleString('es-AR') + ' km' : '–'],
     ['Chofer habitual', v.chofer || '–'], ['Estado', v.activo ? 'Activo' : 'Dado de baja'],
     ['Fecha de alta', v.creado_en ? v.creado_en.slice(0, 10).split('-').reverse().join('/') : '–'],

@@ -123,7 +123,7 @@
             <thead>
               <tr>
                 <th>Patente</th><th>Marca</th><th>Modelo</th><th>Año</th><th>Combustible</th>
-                <th>Chofer</th><th class="num col-consumo">Vales (mes)</th><th class="num col-consumo">Litros (mes)</th><th></th>
+                <th>Propiedad</th><th>Chofer</th><th class="num col-consumo">Vales (mes)</th><th class="num col-consumo">Litros (mes)</th><th></th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -405,6 +405,11 @@
           </select>
         </label>
         <label>Kilometraje <input type="number" id="vehiculo-km" min="0" placeholder="Ej: 150000"></label>
+        <label>Propiedad
+          <select id="vehiculo-propiedad">
+            <option>Propio</option><option>Alquilado</option>
+          </select>
+        </label>
       </div>
       <label>Chofer habitual <input type="text" id="vehiculo-chofer" list="lista-empleados" placeholder="Nombre del chofer (opcional)"></label>
       <label>Observaciones <textarea id="vehiculo-notas" rows="3" placeholder="Notas u observaciones del vehículo (opcional)"></textarea></label>
