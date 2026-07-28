@@ -20,25 +20,80 @@
         <span class="sidebar-actividad">Módulos Habitacionales</span>
       </div>
       <nav>
-        <button class="nav-item activo" data-seccion="resumen">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg>
-          Resumen
+        <button class="nav-item activo" data-seccion="inventario">
+          <svg viewBox="0 0 24 24"><path d="M3.5 8.5 12 4l8.5 4.5v7L12 20l-8.5-4.5z"/><path d="M3.5 8.5 12 13l8.5-4.5M12 13v7"/></svg>
+          Inventario de Módulos
+        </button>
+        <button class="nav-item" data-seccion="reparaciones">
+          <svg viewBox="0 0 24 24"><path d="M14.5 6.2a3.8 3.8 0 0 0 5 5l-8.3 8.3a2.4 2.4 0 0 1-3.4-3.4z"/><path d="M14.5 6.2 17.9 2.8"/></svg>
+          Seguimiento de Reparación
+        </button>
+        <button class="nav-item" data-seccion="cronograma">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7 14h6"/></svg>
+          Cronograma de Reparación
+        </button>
+        <button class="nav-item" data-seccion="materiales">
+          <svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/><path d="M7.5 5.2l9 4.5"/></svg>
+          Materiales
+        </button>
+        <button class="nav-item" data-seccion="documentacion">
+          <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/></svg>
+          Documentación
         </button>
       </nav>
       <div class="sidebar-pie">
         <span id="usuario-actual"></span>
-        <a href="index.html" class="btn btn-chico btn-salir">← Flota</a>
+        <a href="index.html" class="btn btn-chico btn-salir">← Volver</a>
       </div>
     </aside>
 
     <main class="contenido">
-      <section id="seccion-resumen" class="seccion">
+
+      <!-- Inventario de Módulos -->
+      <section id="seccion-inventario" class="seccion">
         <div class="seccion-encabezado">
-          <h2>Módulos Habitacionales</h2>
+          <h2>Inventario de Módulos</h2>
         </div>
-        <p class="seccion-leyenda">Control de reparación de casillas. Sistema propio, separado de la gestión de flota.</p>
-        <p class="texto-vacio">Todavía no hay nada cargado. Definí con tu equipo qué datos hay que llevar de cada módulo y se arma acá.</p>
+        <p class="seccion-leyenda">Registro de todos los módulos con su ficha técnica, fotografías, estado actual e historial completo de intervenciones: antes y después, trabajos realizados, materiales utilizados, costos y observaciones.</p>
+        <p class="texto-vacio">Sección en construcción.</p>
       </section>
+
+      <!-- Seguimiento de Reparación -->
+      <section id="seccion-reparaciones" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Seguimiento de Reparación</h2>
+        </div>
+        <p class="seccion-leyenda">Gestión de las reparaciones en curso mediante órdenes de trabajo, responsables, estado, observaciones y porcentaje de avance.</p>
+        <p class="texto-vacio">Sección en construcción.</p>
+      </section>
+
+      <!-- Cronograma de Reparación -->
+      <section id="seccion-cronograma" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Cronograma de Reparación</h2>
+        </div>
+        <p class="seccion-leyenda">Calendario de tareas con los trabajos programados, fechas objetivo, responsables y una barra de progreso por módulo.</p>
+        <p class="texto-vacio">Sección en construcción.</p>
+      </section>
+
+      <!-- Materiales -->
+      <section id="seccion-materiales" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Materiales</h2>
+        </div>
+        <p class="seccion-leyenda">Pedidos, recepción y consumo de materiales utilizados en cada reparación, con control de stock básico.</p>
+        <p class="texto-vacio">Sección en construcción.</p>
+      </section>
+
+      <!-- Documentación -->
+      <section id="seccion-documentacion" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Documentación</h2>
+        </div>
+        <p class="seccion-leyenda">Repositorio de planos, manuales, certificados, fotografías, checklists y toda documentación relacionada con cada módulo.</p>
+        <p class="texto-vacio">Sección en construcción.</p>
+      </section>
+
     </main>
   </div>
 
