@@ -105,6 +105,85 @@ CREATE TABLE IF NOT EXISTS documentos_empleado (
   creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
+-- ===== Operaciones · Módulos habitacionales =====
+
+CREATE TABLE IF NOT EXISTS modulos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  bien_capital TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  tipo TEXT,
+  largo REAL,
+  ancho REAL,
+  alto REAL,
+  cliente TEXT,
+  ubicacion TEXT,
+  estado TEXT NOT NULL DEFAULT 'Pendiente',
+  avance INTEGER NOT NULL DEFAULT 0 CHECK (avance BETWEEN 0 AND 100),
+  fecha_objetivo TEXT,
+  notas TEXT,
+  activo INTEGER NOT NULL DEFAULT 1,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS modulo_fotos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  modulo_id INTEGER NOT NULL REFERENCES modulos(id),
+  archivo TEXT NOT NULL,
+  descripcion TEXT,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+-- Parte de trabajo: qué se hizo en un módulo un día determinado
+CREATE TABLE IF NOT EXISTS partes_diarios (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fecha TEXT NOT NULL,
+  modulo_id INTEGER NOT NULL REFERENCES modulos(id),
+  actividades TEXT NOT NULL,
+  responsable TEXT,
+  avance INTEGER CHECK (avance BETWEEN 0 AND 100),
+  notas TEXT,
+  creado_por TEXT,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS parte_fotos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  parte_id INTEGER NOT NULL REFERENCES partes_diarios(id),
+  archivo TEXT NOT NULL,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS materiales (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  modulo_id INTEGER REFERENCES modulos(id),
+  fecha TEXT NOT NULL,
+  descripcion TEXT NOT NULL,
+  cantidad REAL,
+  unidad TEXT,
+  estado TEXT NOT NULL DEFAULT 'Pedido',
+  proveedor TEXT,
+  costo REAL,
+  notas TEXT,
+  comprobante_archivo TEXT,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS documentos_modulo (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  modulo_id INTEGER REFERENCES modulos(id),
+  tipo TEXT NOT NULL,
+  titulo TEXT,
+  archivo TEXT,
+  notas TEXT,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_modulo_fotos ON modulo_fotos(modulo_id);
+CREATE INDEX IF NOT EXISTS idx_partes_fecha ON partes_diarios(fecha);
+CREATE INDEX IF NOT EXISTS idx_partes_modulo ON partes_diarios(modulo_id);
+CREATE INDEX IF NOT EXISTS idx_parte_fotos ON parte_fotos(parte_id);
+CREATE INDEX IF NOT EXISTS idx_materiales_modulo ON materiales(modulo_id);
+CREATE INDEX IF NOT EXISTS idx_docs_modulo ON documentos_modulo(modulo_id);
+
 CREATE INDEX IF NOT EXISTS idx_docs_empleado ON documentos_empleado(empleado_id);
 CREATE INDEX IF NOT EXISTS idx_vales_vehiculo ON vales(vehiculo_id);
 CREATE INDEX IF NOT EXISTS idx_vales_fecha ON vales(fecha);

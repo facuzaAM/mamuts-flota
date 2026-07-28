@@ -813,6 +813,309 @@ app.get('/api/dashboard', requiereLogin, (req, res) => {
   res.json(d);
 });
 
+// ---------- Operaciones · Módulos habitacionales ----------
+const ESTADOS_MODULO = ['Pendiente', 'En reparación', 'Terminado', 'Entregado'];
+
+function numeroONull(v) {
+  const n = parseFloat(String(v ?? '').replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+function avanceValido(v) {
+  const n = parseInt(v, 10);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(100, Math.max(0, n));
+}
+function textoONull(v) {
+  const t = String(v ?? '').trim();
+  return t || null;
+}
+
+// Inventario
+app.get('/api/modulos', requiereLogin, (req, res) => {
+  const incluirBajas = req.query.inactivos === '1';
+  const modulos = db.prepare(`
+    SELECT m.*, (SELECT COUNT(*) FROM modulo_fotos f WHERE f.modulo_id = m.id) AS fotos
+    FROM modulos m ${incluirBajas ? '' : 'WHERE m.activo = 1'}
+    ORDER BY m.activo DESC, m.bien_capital COLLATE NOCASE
+  `).all();
+  res.json(modulos);
+});
+
+// Resumen para el cronograma: avance general y por módulo
+app.get('/api/modulos/resumen', requiereLogin, (req, res) => {
+  const modulos = db.prepare('SELECT id, bien_capital, tipo, estado, avance, fecha_objetivo FROM modulos WHERE activo = 1 ORDER BY bien_capital COLLATE NOCASE').all();
+  // El avance total es el promedio sobre el total de módulos activos
+  const total = modulos.length
+    ? Math.round(modulos.reduce((suma, m) => suma + m.avance, 0) / modulos.length)
+    : 0;
+  res.json({ avance_total: total, cantidad: modulos.length, modulos });
+});
+
+app.get('/api/modulos/:id', requiereLogin, (req, res) => {
+  const modulo = db.prepare('SELECT * FROM modulos WHERE id = ?').get(req.params.id);
+  if (!modulo) return res.status(404).json({ error: 'Módulo no encontrado' });
+  modulo.fotos = db.prepare('SELECT * FROM modulo_fotos WHERE modulo_id = ? ORDER BY id DESC').all(modulo.id);
+  modulo.partes = db.prepare('SELECT * FROM partes_diarios WHERE modulo_id = ? ORDER BY fecha DESC, id DESC').all(modulo.id);
+  for (const p of modulo.partes) {
+    p.fotos = db.prepare('SELECT * FROM parte_fotos WHERE parte_id = ?').all(p.id);
+  }
+  modulo.materiales = db.prepare('SELECT * FROM materiales WHERE modulo_id = ? ORDER BY fecha DESC, id DESC').all(modulo.id);
+  modulo.documentos = db.prepare('SELECT * FROM documentos_modulo WHERE modulo_id = ? ORDER BY id DESC').all(modulo.id);
+  res.json(modulo);
+});
+
+function datosModulo(body) {
+  const bien = String(body.bien_capital || '').trim();
+  if (!bien) return { error: 'El número de bien de capital es obligatorio' };
+  const estado = ESTADOS_MODULO.includes(body.estado) ? body.estado : 'Pendiente';
+  const objetivo = String(body.fecha_objetivo || '').trim();
+  return {
+    datos: {
+      bien_capital: bien,
+      tipo: textoONull(body.tipo),
+      largo: numeroONull(body.largo),
+      ancho: numeroONull(body.ancho),
+      alto: numeroONull(body.alto),
+      cliente: textoONull(body.cliente),
+      ubicacion: textoONull(body.ubicacion),
+      estado,
+      fecha_objetivo: /^\d{4}-\d{2}-\d{2}$/.test(objetivo) ? objetivo : null,
+      notas: textoONull(body.notas)
+    }
+  };
+}
+
+app.post('/api/modulos', requiereLogin, (req, res) => {
+  const { error, datos } = datosModulo(req.body || {});
+  if (error) return res.status(400).json({ error });
+  try {
+    const info = db.prepare(`
+      INSERT INTO modulos (bien_capital, tipo, largo, ancho, alto, cliente, ubicacion, estado, fecha_objetivo, notas)
+      VALUES (@bien_capital, @tipo, @largo, @ancho, @alto, @cliente, @ubicacion, @estado, @fecha_objetivo, @notas)
+    `).run(datos);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  } catch (e) {
+    res.status(400).json({ error: String(e.message).includes('UNIQUE') ? 'Ya existe un módulo con ese número de bien de capital' : 'No se pudo guardar el módulo' });
+  }
+});
+
+app.put('/api/modulos/:id', requiereLogin, (req, res) => {
+  const { error, datos } = datosModulo(req.body || {});
+  if (error) return res.status(400).json({ error });
+  try {
+    const info = db.prepare(`
+      UPDATE modulos SET bien_capital=@bien_capital, tipo=@tipo, largo=@largo, ancho=@ancho, alto=@alto,
+        cliente=@cliente, ubicacion=@ubicacion, estado=@estado, fecha_objetivo=@fecha_objetivo, notas=@notas
+      WHERE id=@id
+    `).run({ ...datos, id: Number(req.params.id) });
+    if (info.changes === 0) return res.status(404).json({ error: 'Módulo no encontrado' });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: String(e.message).includes('UNIQUE') ? 'Ya existe un módulo con ese número de bien de capital' : 'No se pudo guardar el módulo' });
+  }
+});
+
+// Baja lógica: el módulo deja de aparecer pero conserva su historial
+app.post('/api/modulos/:id/activo', requiereLogin, (req, res) => {
+  const activo = req.body && req.body.activo ? 1 : 0;
+  const info = db.prepare('UPDATE modulos SET activo = ? WHERE id = ?').run(activo, req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'Módulo no encontrado' });
+  res.json({ ok: true });
+});
+
+// Fotos del módulo
+app.post('/api/modulos/:id/fotos', requiereLogin, (req, res) => {
+  subida.array('fotos', 10)(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    const modulo = db.prepare('SELECT id FROM modulos WHERE id = ?').get(req.params.id);
+    if (!modulo || !req.files || !req.files.length) {
+      (req.files || []).forEach((f) => borrarAdjunto(f.filename));
+      return res.status(modulo ? 400 : 404).json({ error: modulo ? 'Elegí al menos una foto' : 'Módulo no encontrado' });
+    }
+    const desc = textoONull((req.body || {}).descripcion);
+    const insertar = db.prepare('INSERT INTO modulo_fotos (modulo_id, archivo, descripcion) VALUES (?, ?, ?)');
+    req.files.forEach((f) => insertar.run(modulo.id, f.filename, desc));
+    res.json({ ok: true, cantidad: req.files.length });
+  });
+});
+
+app.delete('/api/modulo-fotos/:id', requiereLogin, (req, res) => {
+  const foto = db.prepare('SELECT * FROM modulo_fotos WHERE id = ?').get(req.params.id);
+  if (!foto) return res.status(404).json({ error: 'Foto no encontrada' });
+  db.prepare('DELETE FROM modulo_fotos WHERE id = ?').run(foto.id);
+  borrarAdjunto(foto.archivo);
+  res.json({ ok: true });
+});
+
+// Seguimiento de reparación: partes de trabajo por día
+app.get('/api/partes', requiereLogin, (req, res) => {
+  const fecha = String(req.query.fecha || '').trim();
+  const filtrarFecha = /^\d{4}-\d{2}-\d{2}$/.test(fecha);
+  const partes = db.prepare(`
+    SELECT p.*, m.bien_capital, m.tipo AS modulo_tipo
+    FROM partes_diarios p JOIN modulos m ON m.id = p.modulo_id
+    ${filtrarFecha ? 'WHERE p.fecha = ?' : ''}
+    ORDER BY p.fecha DESC, p.id DESC ${filtrarFecha ? '' : 'LIMIT 200'}
+  `).all(...(filtrarFecha ? [fecha] : []));
+  for (const p of partes) {
+    p.fotos = db.prepare('SELECT * FROM parte_fotos WHERE parte_id = ?').all(p.id);
+  }
+  res.json({ hoy: hoyAR(), partes });
+});
+
+// Días con trabajo cargado, para pintar el calendario del cronograma
+app.get('/api/partes/calendario', requiereLogin, (req, res) => {
+  const mes = String(req.query.mes || '').trim();
+  if (!/^\d{4}-\d{2}$/.test(mes)) return res.status(400).json({ error: 'Mes inválido' });
+  const [desde, hasta] = rangoMes(mes);
+  const dias = db.prepare(`
+    SELECT fecha, COUNT(*) AS partes, COUNT(DISTINCT modulo_id) AS modulos
+    FROM partes_diarios WHERE fecha >= ? AND fecha < ? GROUP BY fecha
+  `).all(desde, hasta);
+  const objetivos = db.prepare(`
+    SELECT fecha_objetivo AS fecha, bien_capital FROM modulos
+    WHERE activo = 1 AND fecha_objetivo >= ? AND fecha_objetivo < ?
+  `).all(desde, hasta);
+  res.json({ hoy: hoyAR(), dias, objetivos });
+});
+
+app.post('/api/partes', requiereLogin, (req, res) => {
+  subida.array('fotos', 10)(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    const body = req.body || {};
+    const limpiar = () => (req.files || []).forEach((f) => borrarAdjunto(f.filename));
+    const fecha = String(body.fecha || '').trim() || hoyAR();
+    const moduloId = parseInt(body.modulo_id, 10);
+    const actividades = String(body.actividades || '').trim();
+    const modulo = db.prepare('SELECT id FROM modulos WHERE id = ?').get(moduloId);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !modulo || !actividades) {
+      limpiar();
+      return res.status(400).json({ error: !modulo ? 'Elegí el módulo en el que se trabajó' : (!actividades ? 'Contá qué actividades se realizaron' : 'La fecha es inválida') });
+    }
+    const avance = avanceValido(body.avance);
+    const info = db.prepare(`
+      INSERT INTO partes_diarios (fecha, modulo_id, actividades, responsable, avance, notas, creado_por)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(fecha, modulo.id, actividades, textoONull(body.responsable), avance, textoONull(body.notas), req.usuario.username);
+    const parteId = info.lastInsertRowid;
+    const insertarFoto = db.prepare('INSERT INTO parte_fotos (parte_id, archivo) VALUES (?, ?)');
+    (req.files || []).forEach((f) => insertarFoto.run(parteId, f.filename));
+    // El avance del parte pasa a ser el avance actual del módulo
+    if (avance !== null) db.prepare('UPDATE modulos SET avance = ? WHERE id = ?').run(avance, modulo.id);
+    res.json({ ok: true, id: parteId });
+  });
+});
+
+app.delete('/api/partes/:id', requiereLogin, (req, res) => {
+  const parte = db.prepare('SELECT * FROM partes_diarios WHERE id = ?').get(req.params.id);
+  if (!parte) return res.status(404).json({ error: 'Parte no encontrado' });
+  const fotos = db.prepare('SELECT * FROM parte_fotos WHERE parte_id = ?').all(parte.id);
+  db.prepare('DELETE FROM parte_fotos WHERE parte_id = ?').run(parte.id);
+  db.prepare('DELETE FROM partes_diarios WHERE id = ?').run(parte.id);
+  fotos.forEach((f) => borrarAdjunto(f.archivo));
+  res.json({ ok: true });
+});
+
+// El avance del módulo también se puede corregir a mano desde la barra
+app.post('/api/modulos/:id/avance', requiereLogin, (req, res) => {
+  const avance = avanceValido((req.body || {}).avance);
+  if (avance === null) return res.status(400).json({ error: 'El avance debe ser un número entre 0 y 100' });
+  const info = db.prepare('UPDATE modulos SET avance = ? WHERE id = ?').run(avance, req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'Módulo no encontrado' });
+  res.json({ ok: true, avance });
+});
+
+// Materiales
+app.get('/api/materiales', requiereLogin, (req, res) => {
+  const moduloId = parseInt(req.query.modulo_id, 10);
+  const filtrar = Number.isFinite(moduloId);
+  const filas = db.prepare(`
+    SELECT mat.*, m.bien_capital FROM materiales mat
+    LEFT JOIN modulos m ON m.id = mat.modulo_id
+    ${filtrar ? 'WHERE mat.modulo_id = ?' : ''}
+    ORDER BY mat.fecha DESC, mat.id DESC
+  `).all(...(filtrar ? [moduloId] : []));
+  res.json(filas);
+});
+
+app.post('/api/materiales', requiereLogin, (req, res) => {
+  subida.single('comprobante')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    const body = req.body || {};
+    const descripcion = String(body.descripcion || '').trim();
+    const fecha = String(body.fecha || '').trim() || hoyAR();
+    if (!descripcion || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      if (req.file) borrarAdjunto(req.file.filename);
+      return res.status(400).json({ error: descripcion ? 'La fecha es inválida' : 'Escribí qué material es' });
+    }
+    const moduloId = parseInt(body.modulo_id, 10);
+    const info = db.prepare(`
+      INSERT INTO materiales (modulo_id, fecha, descripcion, cantidad, unidad, estado, proveedor, costo, notas, comprobante_archivo)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      Number.isFinite(moduloId) ? moduloId : null, fecha, descripcion,
+      numeroONull(body.cantidad), textoONull(body.unidad),
+      ['Pedido', 'Recibido', 'Consumido'].includes(body.estado) ? body.estado : 'Pedido',
+      textoONull(body.proveedor), numeroONull(body.costo), textoONull(body.notas),
+      req.file ? req.file.filename : null
+    );
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+});
+
+app.post('/api/materiales/:id/estado', requiereLogin, (req, res) => {
+  const estado = (req.body || {}).estado;
+  if (!['Pedido', 'Recibido', 'Consumido'].includes(estado)) return res.status(400).json({ error: 'Estado inválido' });
+  const info = db.prepare('UPDATE materiales SET estado = ? WHERE id = ?').run(estado, req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'Material no encontrado' });
+  res.json({ ok: true });
+});
+
+app.delete('/api/materiales/:id', requiereLogin, (req, res) => {
+  const mat = db.prepare('SELECT * FROM materiales WHERE id = ?').get(req.params.id);
+  if (!mat) return res.status(404).json({ error: 'Material no encontrado' });
+  db.prepare('DELETE FROM materiales WHERE id = ?').run(mat.id);
+  borrarAdjunto(mat.comprobante_archivo);
+  res.json({ ok: true });
+});
+
+// Documentación
+app.get('/api/documentos-modulo', requiereLogin, (req, res) => {
+  const moduloId = parseInt(req.query.modulo_id, 10);
+  const filtrar = Number.isFinite(moduloId);
+  const filas = db.prepare(`
+    SELECT d.*, m.bien_capital FROM documentos_modulo d
+    LEFT JOIN modulos m ON m.id = d.modulo_id
+    ${filtrar ? 'WHERE d.modulo_id = ?' : ''}
+    ORDER BY d.id DESC
+  `).all(...(filtrar ? [moduloId] : []));
+  res.json(filas);
+});
+
+app.post('/api/documentos-modulo', requiereLogin, (req, res) => {
+  subida.single('archivo')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    const body = req.body || {};
+    const tipo = String(body.tipo || '').trim();
+    if (!tipo || !req.file) {
+      if (req.file) borrarAdjunto(req.file.filename);
+      return res.status(400).json({ error: tipo ? 'Adjuntá el archivo' : 'Elegí el tipo de documento' });
+    }
+    const moduloId = parseInt(body.modulo_id, 10);
+    const info = db.prepare('INSERT INTO documentos_modulo (modulo_id, tipo, titulo, archivo, notas) VALUES (?, ?, ?, ?, ?)')
+      .run(Number.isFinite(moduloId) ? moduloId : null, tipo, textoONull(body.titulo), req.file.filename, textoONull(body.notas));
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+});
+
+app.delete('/api/documentos-modulo/:id', requiereLogin, (req, res) => {
+  const doc = db.prepare('SELECT * FROM documentos_modulo WHERE id = ?').get(req.params.id);
+  if (!doc) return res.status(404).json({ error: 'Documento no encontrado' });
+  db.prepare('DELETE FROM documentos_modulo WHERE id = ?').run(doc.id);
+  borrarAdjunto(doc.archivo);
+  res.json({ ok: true });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Red de seguridad: un error inesperado no debe tumbar el servidor para todos

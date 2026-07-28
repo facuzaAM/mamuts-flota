@@ -161,10 +161,12 @@ body {
   min-height: 100vh; display: grid; place-items: center;
   color: var(--texto-suave); font-size: 14px;
 }
-.sidebar-actividad {
-  display: block; margin-top: 10px; text-align: center;
-  font-size: 12px; font-weight: 600; letter-spacing: .04em;
-  text-transform: uppercase; color: rgba(255, 255, 255, .85);
+/* Franja con el nombre de la actividad, arriba del contenido */
+.barra-actividad {
+  background: var(--rojo); color: var(--blanco);
+  padding: 7px 16px; border-radius: var(--radio);
+  font-size: 12.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; margin-bottom: 22px;
 }
 
 /* ===== Operaciones: grilla de actividades ===== */
@@ -202,6 +204,157 @@ body {
   color: var(--texto-suave); font-size: 13px; white-space: nowrap;
 }
 .actividad:hover .actividad-flecha { color: var(--rojo); }
+
+/* ===== Barras de avance ===== */
+.barra-caja { display: flex; align-items: center; gap: 9px; min-width: 150px; }
+.barra-pista {
+  display: block; flex: 1; height: 8px; border-radius: 99px;
+  background: #e7e8ec; overflow: hidden; min-width: 60px;
+}
+.barra-relleno {
+  display: block; height: 100%; border-radius: 99px;
+  background: var(--rojo); transition: width .2s;
+}
+.barra-grande { height: 14px; }
+.barra-num {
+  flex: none; font-size: 12.5px; font-weight: 700;
+  color: var(--tinta); font-variant-numeric: tabular-nums; min-width: 38px; text-align: right;
+}
+.barra-rango { flex: 1; min-width: 90px; margin: 0; accent-color: var(--rojo); width: auto; }
+.celda-barra { min-width: 170px; }
+.etiqueta-barra {
+  display: block; font-size: 11.5px; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--texto-suave); font-weight: 600; margin-bottom: 6px;
+}
+.nota-bloque { color: var(--texto-suave); font-size: 13px; margin: -6px 0 14px; }
+
+.avance-fila {
+  display: flex; align-items: center; gap: 16px;
+  padding: 9px 0; border-bottom: 1px solid var(--borde);
+}
+.avance-fila:last-child { border-bottom: none; }
+.avance-nombre { flex: 0 0 210px; font-size: 14px; font-weight: 600; color: var(--tinta); }
+.avance-nombre small { display: block; font-weight: 400; color: var(--texto-suave); font-size: 12.5px; }
+.avance-fila .barra-caja { flex: 1; }
+
+.avance-general { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.avance-general-texto small { display: block; color: var(--texto-suave); font-size: 13px; }
+.avance-general-num {
+  font-size: clamp(26px, 3vw, 34px); line-height: 1;
+  color: var(--rojo); font-variant-numeric: tabular-nums;
+}
+
+/* ===== Calendario del cronograma ===== */
+.cal-titulo { font-size: 15px; color: var(--tinta); min-width: 150px; text-align: center; }
+.calendario {
+  background: var(--blanco); border: 1px solid var(--borde);
+  border-radius: var(--radio); overflow: hidden; margin-top: 14px;
+}
+.cal-encabezado, .cal-dias { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-encabezado {
+  background: #fafafb; border-bottom: 1px solid var(--borde);
+}
+.cal-encabezado span {
+  padding: 9px 6px; text-align: center;
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--texto-suave);
+}
+.cal-dia {
+  min-height: 96px; padding: 7px 8px;
+  border-right: 1px solid var(--borde); border-bottom: 1px solid var(--borde);
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 12.5px; cursor: pointer; background: var(--blanco);
+}
+.cal-dia:nth-child(7n) { border-right: none; }
+.cal-dia:hover { background: #fafafb; }
+.cal-vacio { background: #fbfbfc; cursor: default; }
+.cal-vacio:hover { background: #fbfbfc; }
+.cal-numero { font-weight: 700; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.cal-hoy { background: var(--rojo-claro); }
+.cal-hoy:hover { background: #fce0e2; }
+.cal-hoy .cal-numero {
+  background: var(--rojo); color: var(--blanco);
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+}
+.cal-marca {
+  background: #e8f4ea; color: var(--verde);
+  border-radius: 3px; padding: 2px 6px;
+  font-size: 11px; font-weight: 600;
+}
+.cal-objetivo {
+  background: #fef3c7; color: #92400e;
+  border-radius: 3px; padding: 2px 6px;
+  font-size: 11px; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cal-referencias {
+  display: flex; flex-wrap: wrap; gap: 18px;
+  margin-top: 12px; font-size: 12.5px; color: var(--texto-suave);
+}
+.cal-referencias span { display: flex; align-items: center; gap: 7px; }
+.cal-referencias i { width: 12px; height: 12px; border-radius: 3px; display: block; }
+.ref-trabajo { background: #e8f4ea; border: 1px solid var(--verde); }
+.ref-objetivo { background: #fef3c7; border: 1px solid #92400e; }
+.ref-hoy { background: var(--rojo-claro); border: 1px solid var(--rojo); }
+
+@media (max-width: 760px) {
+  .cal-dia { min-height: 66px; padding: 5px; font-size: 11px; }
+  .cal-marca, .cal-objetivo { font-size: 10px; padding: 1px 4px; }
+  .avance-nombre { flex-basis: 120px; }
+}
+
+/* ===== Partes de trabajo ===== */
+.parte {
+  background: var(--blanco); border: 1px solid var(--borde);
+  border-left: 3px solid var(--rojo); border-radius: var(--radio);
+  padding: 16px 18px; margin-bottom: 12px;
+}
+.parte-cabecera {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
+}
+.parte-cabecera strong { color: var(--tinta); font-size: 15px; }
+.parte-cabecera-derecha { display: flex; align-items: center; gap: 10px; }
+.parte-fecha { color: var(--texto-suave); font-size: 13px; margin-left: 10px; }
+.parte-actividades { white-space: pre-line; margin-bottom: 6px; }
+.parte-dato { font-size: 13px; color: var(--texto-suave); margin-bottom: 3px; }
+.parte-dato span { font-weight: 600; color: var(--texto); }
+.parte-fotos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+/* ===== Galería de fotos del módulo ===== */
+.galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.galeria-item { margin: 0; position: relative; }
+.galeria-item img {
+  width: 100%; height: 110px; object-fit: cover;
+  border-radius: 4px; border: 1px solid var(--borde); cursor: pointer; display: block;
+}
+.galeria-item figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  font-size: 12px; color: var(--texto-suave); margin-top: 4px;
+}
+.btn-borrar-foto {
+  flex: none; border: none; background: none; cursor: pointer;
+  color: var(--rojo-hover); font-size: 17px; line-height: 1; padding: 0 3px;
+}
+.btn-borrar-foto:hover { color: var(--rojo-profundo); }
+
+/* ===== Campos extra de los formularios ===== */
+.grilla-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 14px; }
+@media (max-width: 560px) { .grilla-3 { grid-template-columns: 1fr; } }
+.campo-grupo {
+  border: 1px solid var(--borde); border-radius: var(--radio);
+  padding: 6px 14px 0; margin-bottom: 14px;
+}
+.campo-grupo legend { font-size: 12.5px; font-weight: 600; color: var(--texto-suave); padding: 0 6px; }
+.rango-caja { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.rango-caja input[type="range"] { flex: 1; margin: 0; accent-color: var(--rojo); width: auto; }
+.rango-caja output {
+  flex: none; min-width: 44px; text-align: right;
+  font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tinta);
+}
+.select-estado { padding: 4px 6px; font-size: 12.5px; width: auto; min-width: 110px; margin: 0; }
+.celda-nota { display: block; color: var(--texto-suave); font-size: 12px; margin-top: 2px; }
 @media (max-width: 900px) { .panel-columnas { grid-template-columns: 1fr; } }
 
 .bloque {

@@ -19,6 +19,23 @@ repositorio es de acceso público.
 
 ## Qué hace
 
+- **Operaciones:** las actividades que la empresa está realizando. Cada una abre
+  su propio sistema en una pestaña aparte, con la misma sesión (no pide login de
+  nuevo). Hoy hay una: **Módulos Habitacionales**.
+- **Módulos Habitacionales** (reparación de casillas), con cinco solapas:
+  - *Inventario:* cada módulo por su **n° de bien de capital**, con tipo, medidas,
+    cliente, ubicación, estado, fecha objetivo y fotos. La ficha ("Ver") muestra
+    todo junto: datos, galería, historial de intervenciones, materiales y
+    documentación. La baja conserva el historial.
+  - *Seguimiento de Reparación:* el trabajo **día por día**. El sistema propone la
+    fecha de hoy; se carga en qué módulo se trabajó, qué actividades se hicieron,
+    el responsable, las **fotos de la jornada** y el % de avance del módulo.
+  - *Cronograma:* calendario mensual con los días que tienen trabajo cargado y las
+    fechas objetivo de entrega. Muestra el **avance general de la obra**, que es el
+    promedio sobre el total de módulos activos, y la barra de cada módulo.
+  - *Materiales:* pedidos y consumos por módulo, con cantidad, unidad, proveedor,
+    costo, comprobante y estado (pedido → recibido → consumido).
+  - *Documentación:* planos, manuales, certificados y checklists de cada módulo.
 - **Vehículos:** alta, edición y baja de los vehículos de la empresa
   (marca, modelo, patente, año, combustible, kilometraje, chofer, observaciones
   y foto opcional). La baja es "lógica": el vehículo deja de aparecer pero su

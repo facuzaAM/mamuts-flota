@@ -17,7 +17,6 @@
     <aside class="sidebar">
       <div class="sidebar-marca">
         <img src="img/logo.png" alt="MAMUTS Servicios Especiales" class="sidebar-logo">
-        <span class="sidebar-actividad">Módulos Habitacionales</span>
       </div>
       <nav>
         <button class="nav-item activo" data-seccion="inventario">
@@ -48,54 +47,348 @@
     </aside>
 
     <main class="contenido">
+      <header class="barra-actividad">Módulos Habitacionales</header>
 
-      <!-- Inventario de Módulos -->
+      <!-- ===== Inventario de Módulos ===== -->
       <section id="seccion-inventario" class="seccion">
         <div class="seccion-encabezado">
           <h2>Inventario de Módulos</h2>
+          <div class="acciones">
+            <label class="check-inline"><input type="checkbox" id="ver-modulos-baja"> Mostrar dados de baja</label>
+            <button id="btn-nuevo-modulo" class="btn btn-primario">+ Agregar módulo</button>
+          </div>
         </div>
-        <p class="seccion-leyenda">Registro de todos los módulos con su ficha técnica, fotografías, estado actual e historial completo de intervenciones: antes y después, trabajos realizados, materiales utilizados, costos y observaciones.</p>
-        <p class="texto-vacio">Sección en construcción.</p>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-modulos">
+            <thead>
+              <tr>
+                <th>Bien de capital</th><th>Tipo</th><th>Medidas</th><th>Cliente</th>
+                <th>Ubicación</th><th>Estado</th><th>Avance</th><th class="num">Fotos</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="modulos-vacio" class="texto-vacio oculto">Todavía no hay módulos cargados. Empezá con "+ Agregar módulo".</p>
       </section>
 
-      <!-- Seguimiento de Reparación -->
+      <!-- ===== Ficha del módulo ===== -->
+      <section id="seccion-modulo-detalle" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2 id="detalle-titulo">Módulo</h2>
+          <div class="acciones">
+            <button id="btn-detalle-fotos" class="btn">+ Agregar fotos</button>
+            <button id="btn-detalle-editar" class="btn">Editar datos</button>
+            <button id="btn-detalle-volver" class="btn">← Al inventario</button>
+          </div>
+        </div>
+        <div class="detalle-grilla">
+          <div class="bloque">
+            <h3>Ficha técnica</h3>
+            <dl class="lista-datos" id="detalle-datos"></dl>
+            <div class="bloque-margen">
+              <span class="etiqueta-barra">Avance de la reparación</span>
+              <div id="detalle-barra"></div>
+            </div>
+          </div>
+          <div class="bloque">
+            <h3>Fotografías</h3>
+            <div class="galeria" id="detalle-galeria"></div>
+            <p id="detalle-sin-fotos" class="texto-vacio oculto">Sin fotos cargadas.</p>
+          </div>
+        </div>
+        <div class="bloque bloque-margen">
+          <h3>Historial de intervenciones</h3>
+          <div id="detalle-historial"></div>
+        </div>
+        <div class="detalle-grilla bloque-margen">
+          <div class="bloque">
+            <h3>Materiales del módulo</h3>
+            <div class="tabla-scroll">
+              <table class="tabla" id="tabla-detalle-materiales">
+                <thead><tr><th>Fecha</th><th>Material</th><th class="num">Cant.</th><th>Estado</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p id="detalle-sin-materiales" class="texto-vacio oculto">Sin materiales registrados.</p>
+          </div>
+          <div class="bloque">
+            <h3>Documentación del módulo</h3>
+            <div class="tabla-scroll">
+              <table class="tabla" id="tabla-detalle-docs">
+                <thead><tr><th>Tipo</th><th>Título</th><th></th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p id="detalle-sin-docs" class="texto-vacio oculto">Sin documentación cargada.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Seguimiento de Reparación ===== -->
       <section id="seccion-reparaciones" class="seccion oculto">
         <div class="seccion-encabezado">
           <h2>Seguimiento de Reparación</h2>
+          <button id="btn-nuevo-parte" class="btn btn-primario">+ Cargar trabajo del día</button>
         </div>
-        <p class="seccion-leyenda">Gestión de las reparaciones en curso mediante órdenes de trabajo, responsables, estado, observaciones y porcentaje de avance.</p>
-        <p class="texto-vacio">Sección en construcción.</p>
+        <div class="filtros">
+          <label>Día <input type="date" id="filtro-parte-fecha"></label>
+          <button id="btn-parte-hoy" class="btn btn-chico">Hoy</button>
+          <span id="parte-resumen" class="filtro-resumen"></span>
+        </div>
+        <div id="lista-partes"></div>
+        <p id="partes-vacio" class="texto-vacio oculto">No hay trabajo cargado para este día.</p>
+
+        <div class="bloque bloque-margen">
+          <h3>Avance por módulo</h3>
+          <p class="nota-bloque">Podés corregir el porcentaje a mano. Es el mismo que se ve en el cronograma.</p>
+          <div id="avances-modulos"></div>
+        </div>
       </section>
 
-      <!-- Cronograma de Reparación -->
+      <!-- ===== Cronograma de Reparación ===== -->
       <section id="seccion-cronograma" class="seccion oculto">
         <div class="seccion-encabezado">
           <h2>Cronograma de Reparación</h2>
+          <div class="acciones">
+            <button id="cal-anterior" class="btn btn-chico">‹ Mes anterior</button>
+            <strong id="cal-titulo" class="cal-titulo"></strong>
+            <button id="cal-siguiente" class="btn btn-chico">Mes siguiente ›</button>
+          </div>
         </div>
-        <p class="seccion-leyenda">Calendario de tareas con los trabajos programados, fechas objetivo, responsables y una barra de progreso por módulo.</p>
-        <p class="texto-vacio">Sección en construcción.</p>
+
+        <div class="bloque">
+          <div class="avance-general">
+            <div class="avance-general-texto">
+              <span class="etiqueta-barra">Avance general de la obra</span>
+              <small id="avance-general-detalle"></small>
+            </div>
+            <strong id="avance-general-num" class="avance-general-num">0%</strong>
+          </div>
+          <div id="avance-general-barra"></div>
+        </div>
+
+        <div class="calendario" id="calendario">
+          <div class="cal-encabezado">
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+          </div>
+          <div class="cal-dias" id="cal-dias"></div>
+        </div>
+        <div class="cal-referencias">
+          <span><i class="ref-trabajo"></i> Día con trabajo cargado</span>
+          <span><i class="ref-objetivo"></i> Fecha objetivo de entrega</span>
+          <span><i class="ref-hoy"></i> Hoy</span>
+        </div>
+
+        <div class="bloque bloque-margen">
+          <h3>Avance por módulo</h3>
+          <div id="cronograma-avances"></div>
+        </div>
       </section>
 
-      <!-- Materiales -->
+      <!-- ===== Materiales ===== -->
       <section id="seccion-materiales" class="seccion oculto">
         <div class="seccion-encabezado">
           <h2>Materiales</h2>
+          <button id="btn-nuevo-material" class="btn btn-primario">+ Agregar material</button>
         </div>
-        <p class="seccion-leyenda">Pedidos, recepción y consumo de materiales utilizados en cada reparación, con control de stock básico.</p>
-        <p class="texto-vacio">Sección en construcción.</p>
+        <div class="filtros">
+          <label>Módulo <select id="filtro-material-modulo"><option value="">Todos</option></select></label>
+          <span id="material-resumen" class="filtro-resumen"></span>
+        </div>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-materiales">
+            <thead>
+              <tr><th>Fecha</th><th>Módulo</th><th>Material</th><th class="num">Cantidad</th><th>Proveedor</th><th class="num">Costo</th><th>Estado</th><th>Comprobante</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="materiales-vacio" class="texto-vacio oculto">No hay materiales registrados.</p>
       </section>
 
-      <!-- Documentación -->
+      <!-- ===== Documentación ===== -->
       <section id="seccion-documentacion" class="seccion oculto">
         <div class="seccion-encabezado">
           <h2>Documentación</h2>
+          <button id="btn-nuevo-documento" class="btn btn-primario">+ Agregar documento</button>
         </div>
-        <p class="seccion-leyenda">Repositorio de planos, manuales, certificados, fotografías, checklists y toda documentación relacionada con cada módulo.</p>
-        <p class="texto-vacio">Sección en construcción.</p>
+        <div class="filtros">
+          <label>Módulo <select id="filtro-doc-modulo"><option value="">Todos</option></select></label>
+          <span id="doc-resumen" class="filtro-resumen"></span>
+        </div>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-documentos">
+            <thead><tr><th>Tipo</th><th>Título</th><th>Módulo</th><th>Archivo</th><th>Observaciones</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="documentos-vacio" class="texto-vacio oculto">No hay documentación cargada.</p>
       </section>
 
     </main>
   </div>
+
+  <!-- ===== Modal: alta y edición de módulo ===== -->
+  <dialog id="modal-modulo" class="modal-amplio">
+    <form id="form-modulo" method="dialog">
+      <h3 id="modal-modulo-titulo">Agregar módulo</h3>
+      <input type="hidden" id="modulo-id">
+      <div class="grilla-2">
+        <label>N° de bien de capital * <input type="text" id="modulo-bien" required placeholder="Ej: BC-10452"></label>
+        <label>Tipo de módulo
+          <input type="text" id="modulo-tipo" list="tipos-modulo" placeholder="Ej: Dormitorio 4 camas">
+          <datalist id="tipos-modulo">
+            <option>Dormitorio</option><option>Oficina</option><option>Comedor</option>
+            <option>Baño / Sanitario</option><option>Cocina</option><option>Enfermería</option>
+            <option>Depósito</option><option>Sala de máquinas</option>
+          </datalist>
+        </label>
+        <label>Cliente <input type="text" id="modulo-cliente" placeholder="Ej: YPF"></label>
+        <label>Ubicación <input type="text" id="modulo-ubicacion" placeholder="Ej: Taller / Yacimiento"></label>
+      </div>
+      <fieldset class="campo-grupo">
+        <legend>Medidas (metros)</legend>
+        <div class="grilla-3">
+          <label>Largo <input type="number" id="modulo-largo" step="0.01" min="0" placeholder="Ej: 12,20"></label>
+          <label>Ancho <input type="number" id="modulo-ancho" step="0.01" min="0" placeholder="Ej: 2,50"></label>
+          <label>Alto <input type="number" id="modulo-alto" step="0.01" min="0" placeholder="Ej: 2,60"></label>
+        </div>
+      </fieldset>
+      <div class="grilla-2">
+        <label>Estado
+          <select id="modulo-estado">
+            <option>Pendiente</option><option>En reparación</option><option>Terminado</option><option>Entregado</option>
+          </select>
+        </label>
+        <label>Fecha objetivo de entrega <input type="date" id="modulo-objetivo"></label>
+      </div>
+      <label>Observaciones <textarea id="modulo-notas" rows="3" placeholder="Estado en que llegó, daños detectados, lo que haga falta (opcional)"></textarea></label>
+      <div id="modulo-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal: fotos del módulo ===== -->
+  <dialog id="modal-fotos">
+    <form id="form-fotos" method="dialog">
+      <h3>Agregar fotos del módulo</h3>
+      <input type="hidden" id="fotos-modulo-id">
+      <label class="campo-archivo">Fotos (podés elegir varias)
+        <input type="file" id="fotos-archivos" accept="image/jpeg,image/png,image/webp" multiple required>
+      </label>
+      <label>Descripción <input type="text" id="fotos-descripcion" placeholder="Ej: Estado al ingresar / Techo reparado (opcional)"></label>
+      <div id="fotos-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Subir</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal: parte de trabajo del día ===== -->
+  <dialog id="modal-parte" class="modal-amplio">
+    <form id="form-parte" method="dialog">
+      <h3>Trabajo del día</h3>
+      <div class="grilla-2">
+        <label>Fecha * <input type="date" id="parte-fecha" required></label>
+        <label>Módulo en el que se trabajó * <select id="parte-modulo" required></select></label>
+      </div>
+      <label>Actividades realizadas * <textarea id="parte-actividades" rows="4" required placeholder="Ej: Se cambiaron dos paneles del techo, se masilló y lijó la pared norte."></textarea></label>
+      <div class="grilla-2">
+        <label>Responsable <input type="text" id="parte-responsable" placeholder="Quién estuvo a cargo (opcional)"></label>
+        <label>Avance del módulo tras esta jornada
+          <span class="rango-caja">
+            <input type="range" id="parte-avance" min="0" max="100" step="5" value="0">
+            <output id="parte-avance-valor">0%</output>
+          </span>
+        </label>
+      </div>
+      <label class="campo-archivo">Fotos del trabajo de hoy (podés elegir varias)
+        <input type="file" id="parte-fotos" accept="image/jpeg,image/png,image/webp" multiple>
+      </label>
+      <label>Observaciones <textarea id="parte-notas" rows="2" placeholder="Demoras, faltantes, lo que haga falta (opcional)"></textarea></label>
+      <div id="parte-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal: material ===== -->
+  <dialog id="modal-material" class="modal-amplio">
+    <form id="form-material" method="dialog">
+      <h3>Agregar material</h3>
+      <div class="grilla-2">
+        <label>Fecha * <input type="date" id="material-fecha" required></label>
+        <label>Módulo <select id="material-modulo"><option value="">Sin asignar</option></select></label>
+      </div>
+      <label>Material * <input type="text" id="material-descripcion" required placeholder="Ej: Chapa galvanizada C25"></label>
+      <div class="grilla-3">
+        <label>Cantidad <input type="number" id="material-cantidad" step="0.01" min="0" placeholder="Ej: 12"></label>
+        <label>Unidad
+          <input type="text" id="material-unidad" list="unidades-material" placeholder="Ej: m²">
+          <datalist id="unidades-material">
+            <option>unidad</option><option>m</option><option>m²</option><option>m³</option>
+            <option>kg</option><option>litro</option><option>caja</option><option>rollo</option>
+          </datalist>
+        </label>
+        <label>Estado
+          <select id="material-estado"><option>Pedido</option><option>Recibido</option><option>Consumido</option></select>
+        </label>
+      </div>
+      <div class="grilla-2">
+        <label>Proveedor <input type="text" id="material-proveedor" placeholder="Opcional"></label>
+        <label>Costo <input type="text" id="material-costo" inputmode="decimal" placeholder="Ej: 150.000"></label>
+      </div>
+      <label>Observaciones <textarea id="material-notas" rows="2" placeholder="Opcional"></textarea></label>
+      <label class="campo-archivo">Comprobante (opcional)
+        <input type="file" id="material-comprobante" accept="image/jpeg,image/png,image/webp,application/pdf">
+      </label>
+      <div id="material-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal: documento ===== -->
+  <dialog id="modal-documento">
+    <form id="form-documento" method="dialog">
+      <h3>Agregar documento</h3>
+      <label>Tipo *
+        <input type="text" id="documento-tipo" required list="tipos-documento" placeholder="Ej: Plano">
+        <datalist id="tipos-documento">
+          <option>Plano</option><option>Manual</option><option>Certificado</option>
+          <option>Checklist</option><option>Fotografía</option><option>Remito</option><option>Otro</option>
+        </datalist>
+      </label>
+      <label>Título <input type="text" id="documento-titulo" placeholder="Ej: Plano eléctrico (opcional)"></label>
+      <label>Módulo <select id="documento-modulo"><option value="">Sin asignar</option></select></label>
+      <label class="campo-archivo">Archivo * (imagen o PDF)
+        <input type="file" id="documento-archivo" accept="image/jpeg,image/png,image/webp,application/pdf" required>
+      </label>
+      <label>Observaciones <textarea id="documento-notas" rows="2" placeholder="Opcional"></textarea></label>
+      <div id="documento-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal: ver foto en grande ===== -->
+  <dialog id="modal-foto" class="modal-foto">
+    <img id="modal-foto-img" alt="Foto ampliada">
+    <div class="modal-botones">
+      <button type="button" class="btn" data-cerrar>Cerrar</button>
+    </div>
+  </dialog>
 
   <script src="modulos.js"></script>
 </body>
