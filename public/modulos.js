@@ -585,7 +585,7 @@ async function cargarMateriales() {
       <td>${escapar(m.proveedor || '–')}</td>
       <td>
         <select class="select-estado" data-valor="${escapar(m.estado)}" data-estado-material="${m.id}">
-          ${['Pendiente', 'Pedido', 'Comprado'].map((op) => `<option ${op === m.estado ? 'selected' : ''}>${op}</option>`).join('')}
+          ${['Pedido', 'Comprado'].map((op) => `<option ${op === m.estado ? 'selected' : ''}>${op}</option>`).join('')}
         </select>
       </td>
       <td>${celdaArchivo(m.comprobante_archivo)}</td>
@@ -601,7 +601,7 @@ async function cargarMateriales() {
 
 function pintarResumenMateriales() {
   const activos = materialesCache.filter((m) => m.activo);
-  const porEstado = ['Pendiente', 'Pedido', 'Comprado']
+  const porEstado = ['Pedido', 'Comprado']
     .map((e) => `${activos.filter((m) => m.estado === e).length} ${e.toLowerCase()}`)
     .join(' · ');
   $('#material-resumen').textContent = materialesCache.length ? porEstado : '';
@@ -618,7 +618,7 @@ function abrirModalMaterial(material) {
   $('#material-descripcion').value = material ? material.descripcion : '';
   $('#material-cantidad').value = material && material.cantidad != null ? material.cantidad : '';
   $('#material-unidad').value = material ? (material.unidad || '') : '';
-  $('#material-estado').value = material ? material.estado : 'Pendiente';
+  $('#material-estado').value = material ? material.estado : 'Pedido';
   $('#material-proveedor').value = material ? (material.proveedor || '') : '';
   $('#material-notas').value = material ? (material.notas || '') : '';
   $('#material-comprobante').value = '';

@@ -201,8 +201,9 @@ asegurarColumna('vehiculos', 'foto_archivo', 'foto_archivo TEXT');
 asegurarColumna('vehiculos', 'propiedad', "propiedad TEXT NOT NULL DEFAULT 'Propio'");
 // La baja de materiales es lógica: deja de aparecer pero se conserva el registro
 asegurarColumna('materiales', 'activo', 'activo INTEGER NOT NULL DEFAULT 1');
-// Los estados viejos pasan a los tres que se usan hoy
+// Los estados viejos pasan a los dos que se usan hoy: Pedido y Comprado
 db.exec("UPDATE materiales SET estado = 'Comprado' WHERE estado IN ('Recibido', 'Consumido')");
+db.exec("UPDATE materiales SET estado = 'Pedido' WHERE estado = 'Pendiente'");
 asegurarColumna('usuarios', 'permisos', 'permisos TEXT');
 asegurarColumna('usuarios', 'nombre', 'nombre TEXT');
 asegurarColumna('vales', 'tipo_combustible', 'tipo_combustible TEXT');

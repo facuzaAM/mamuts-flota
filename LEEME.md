@@ -34,7 +34,7 @@ repositorio es de acceso público.
     fechas objetivo de entrega. Muestra el **avance general de la obra**, que es el
     promedio sobre el total de módulos activos, y la barra de cada módulo.
   - *Materiales:* qué se pide y para qué módulo va destinado, con fecha, cantidad,
-    unidad, proveedor, comprobante y estado (**pendiente → pedido → comprado**),
+    unidad, proveedor, comprobante y estado (**pedido → comprado**),
     cambiable desde el mismo listado. Se pueden editar y dar de baja; la baja es
     lógica, conserva el registro de lo que se había pedido.
   - *Documentación:* planos, manuales, certificados y checklists de cada módulo.

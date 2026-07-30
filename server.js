@@ -1028,7 +1028,7 @@ app.post('/api/modulos/:id/avance', requiereLogin, (req, res) => {
 });
 
 // Materiales
-const ESTADOS_MATERIAL = ['Pendiente', 'Pedido', 'Comprado'];
+const ESTADOS_MATERIAL = ['Pedido', 'Comprado'];
 
 app.get('/api/materiales', requiereLogin, (req, res) => {
   const moduloId = parseInt(req.query.modulo_id, 10);
@@ -1057,7 +1057,7 @@ function datosMaterial(body) {
       fecha, descripcion,
       cantidad: numeroONull(body.cantidad),
       unidad: textoONull(body.unidad),
-      estado: ESTADOS_MATERIAL.includes(body.estado) ? body.estado : 'Pendiente',
+      estado: ESTADOS_MATERIAL.includes(body.estado) ? body.estado : 'Pedido',
       proveedor: textoONull(body.proveedor),
       notas: textoONull(body.notas)
     }
