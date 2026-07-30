@@ -190,16 +190,19 @@
       <section id="seccion-materiales" class="seccion oculto">
         <div class="seccion-encabezado">
           <h2>Materiales</h2>
-          <button id="btn-nuevo-material" class="btn btn-primario">+ Agregar material</button>
+          <div class="acciones">
+            <label class="check-inline"><input type="checkbox" id="ver-materiales-baja"> Mostrar dados de baja</label>
+            <button id="btn-nuevo-material" class="btn btn-primario">+ Agregar material</button>
+          </div>
         </div>
         <div class="filtros">
-          <label>Módulo <select id="filtro-material-modulo"><option value="">Todos</option></select></label>
+          <label>Destino <select id="filtro-material-modulo"><option value="">Todos</option></select></label>
           <span id="material-resumen" class="filtro-resumen"></span>
         </div>
         <div class="tabla-scroll">
           <table class="tabla" id="tabla-materiales">
             <thead>
-              <tr><th>Fecha</th><th>Módulo</th><th>Material</th><th class="num">Cantidad</th><th>Proveedor</th><th class="num">Costo</th><th>Estado</th><th>Comprobante</th><th></th></tr>
+              <tr><th>Fecha</th><th>Destino</th><th>Material</th><th class="num">Cantidad</th><th>Proveedor</th><th>Estado</th><th>Comprobante</th><th></th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -322,10 +325,13 @@
   <!-- ===== Modal: material ===== -->
   <dialog id="modal-material" class="modal-amplio">
     <form id="form-material" method="dialog">
-      <h3>Agregar material</h3>
+      <h3 id="modal-material-titulo">Agregar material</h3>
+      <input type="hidden" id="material-id">
       <div class="grilla-2">
-        <label>Fecha * <input type="date" id="material-fecha" required></label>
-        <label>Módulo <select id="material-modulo"><option value="">Sin asignar</option></select></label>
+        <label>Fecha del pedido * <input type="date" id="material-fecha" required></label>
+        <label>Destino: ¿para qué módulo es?
+          <select id="material-modulo"><option value="">Sin asignar</option></select>
+        </label>
       </div>
       <label>Material * <input type="text" id="material-descripcion" required placeholder="Ej: Chapa galvanizada C25"></label>
       <div class="grilla-3">
@@ -338,16 +344,18 @@
           </datalist>
         </label>
         <label>Estado
-          <select id="material-estado"><option>Pedido</option><option>Recibido</option><option>Consumido</option></select>
+          <select id="material-estado">
+            <option>Pendiente</option><option>Pedido</option><option>Comprado</option>
+          </select>
         </label>
       </div>
-      <div class="grilla-2">
-        <label>Proveedor <input type="text" id="material-proveedor" placeholder="Opcional"></label>
-        <label>Costo <input type="text" id="material-costo" inputmode="decimal" placeholder="Ej: 150.000"></label>
-      </div>
-      <label>Observaciones <textarea id="material-notas" rows="2" placeholder="Opcional"></textarea></label>
-      <label class="campo-archivo">Comprobante (opcional)
+      <label>Proveedor <input type="text" id="material-proveedor" placeholder="Opcional"></label>
+      <label>Observaciones <textarea id="material-notas" rows="2" placeholder="Para qué se usa, medidas, marca preferida (opcional)"></textarea></label>
+      <label class="campo-archivo">Comprobante o remito (opcional)
         <input type="file" id="material-comprobante" accept="image/jpeg,image/png,image/webp,application/pdf">
+      </label>
+      <label class="check-inline oculto" id="material-quitar-comprobante-caja">
+        <input type="checkbox" id="material-quitar-comprobante"> Quitar el comprobante actual
       </label>
       <div id="material-error" class="mensaje-error oculto"></div>
       <div class="modal-botones">

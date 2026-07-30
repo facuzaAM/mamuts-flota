@@ -199,6 +199,10 @@ function asegurarColumna(tabla, columna, ddl) {
 asegurarColumna('vehiculos', 'foto_archivo', 'foto_archivo TEXT');
 // Los vehículos ya cargados quedan como 'Propio', que es el caso más común
 asegurarColumna('vehiculos', 'propiedad', "propiedad TEXT NOT NULL DEFAULT 'Propio'");
+// La baja de materiales es lógica: deja de aparecer pero se conserva el registro
+asegurarColumna('materiales', 'activo', 'activo INTEGER NOT NULL DEFAULT 1');
+// Los estados viejos pasan a los tres que se usan hoy
+db.exec("UPDATE materiales SET estado = 'Comprado' WHERE estado IN ('Recibido', 'Consumido')");
 asegurarColumna('usuarios', 'permisos', 'permisos TEXT');
 asegurarColumna('usuarios', 'nombre', 'nombre TEXT');
 asegurarColumna('vales', 'tipo_combustible', 'tipo_combustible TEXT');

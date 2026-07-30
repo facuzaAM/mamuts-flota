@@ -39,23 +39,6 @@ function nombreMes(mesISO) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-const formatoDinero = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 });
-function formatearDinero(n) { return formatoDinero.format(Number(n || 0)); }
-
-// Interpreta montos escritos a la argentina: "150.000", "1.250.000,50", "150000"
-function parsearMontoAR(texto) {
-  let s = String(texto == null ? '' : texto).trim().replace(/[^\d.,]/g, '');
-  if (!s) return NaN;
-  if (s.includes(',')) {
-    s = s.replace(/\./g, '').replace(',', '.');
-  } else {
-    const partes = s.split('.');
-    const decimalClaro = partes.length === 2 && partes[1].length <= 2 && partes[0].length <= 3;
-    if (!decimalClaro) s = s.replace(/\./g, '');
-  }
-  return parseFloat(s);
-}
-
 let avisoTimer = null;
 function aviso(texto) {
   let el = $('#aviso');
@@ -85,9 +68,8 @@ function etiquetaEstado(estado) {
     'En reparación': 'etiqueta-alerta',
     'Terminado': 'etiqueta-ok',
     'Entregado': 'etiqueta-rol',
-    'Pedido': 'etiqueta-categoria',
-    'Recibido': 'etiqueta-alerta',
-    'Consumido': 'etiqueta-ok'
+    'Pedido': 'etiqueta-alerta',
+    'Comprado': 'etiqueta-ok'
   }[estado] || 'etiqueta-categoria';
   return `<span class="etiqueta ${clase}">${escapar(estado)}</span>`;
 }
@@ -585,47 +567,69 @@ $('#cal-dias').addEventListener('click', (e) => {
 });
 
 // ---------- Materiales ----------
+let materialesCache = [];
+
 async function cargarMateriales() {
   const filtro = $('#filtro-material-modulo').value;
-  const filas = await api('/api/materiales' + (filtro ? `?modulo_id=${filtro}` : ''));
-  $('#tabla-materiales tbody').innerHTML = filas.map((m) => `
+  const parametros = new URLSearchParams();
+  if (filtro) parametros.set('modulo_id', filtro);
+  if ($('#ver-materiales-baja').checked) parametros.set('inactivos', '1');
+  const consulta = parametros.toString();
+  materialesCache = await api('/api/materiales' + (consulta ? `?${consulta}` : ''));
+  $('#tabla-materiales tbody').innerHTML = materialesCache.map((m) => `
     <tr>
-      <td>${formatearFecha(m.fecha)}</td>
+      <td>${formatearFecha(m.fecha)}${m.activo ? '' : ' <span class="etiqueta etiqueta-baja">BAJA</span>'}</td>
       <td>${escapar(m.bien_capital || 'Sin asignar')}</td>
       <td>${escapar(m.descripcion)}${m.notas ? `<small class="celda-nota">${escapar(m.notas)}</small>` : ''}</td>
       <td class="num">${m.cantidad != null ? Number(m.cantidad).toLocaleString('es-AR') + (m.unidad ? ' ' + escapar(m.unidad) : '') : '–'}</td>
       <td>${escapar(m.proveedor || '–')}</td>
-      <td class="num">${m.costo != null ? formatearDinero(m.costo) : '–'}</td>
       <td>
         <select class="select-estado" data-estado-material="${m.id}">
-          ${['Pedido', 'Recibido', 'Consumido'].map((op) => `<option ${op === m.estado ? 'selected' : ''}>${op}</option>`).join('')}
+          ${['Pendiente', 'Pedido', 'Comprado'].map((op) => `<option ${op === m.estado ? 'selected' : ''}>${op}</option>`).join('')}
         </select>
       </td>
       <td>${celdaArchivo(m.comprobante_archivo)}</td>
-      <td class="celda-acciones"><button class="btn btn-chico btn-peligro" data-borrar-material="${m.id}">Borrar</button></td>
+      <td class="celda-acciones">
+        <button class="btn btn-chico" data-editar-material="${m.id}">Editar</button>
+        <button class="btn btn-chico ${m.activo ? 'btn-peligro' : ''}" data-baja-material="${m.id}" data-activo="${m.activo}">${m.activo ? 'Dar de baja' : 'Reactivar'}</button>
+      </td>
     </tr>
   `).join('');
-  $('#materiales-vacio').classList.toggle('oculto', filas.length > 0);
-  const total = filas.reduce((s, m) => s + Number(m.costo || 0), 0);
-  $('#material-resumen').textContent = filas.length ? `${filas.length} ${filas.length === 1 ? 'registro' : 'registros'} · ${formatearDinero(total)}` : '';
+  $('#materiales-vacio').classList.toggle('oculto', materialesCache.length > 0);
+  const activos = materialesCache.filter((m) => m.activo);
+  const porEstado = ['Pendiente', 'Pedido', 'Comprado']
+    .map((e) => `${activos.filter((m) => m.estado === e).length} ${e.toLowerCase()}`)
+    .join(' · ');
+  $('#material-resumen').textContent = materialesCache.length ? porEstado : '';
 }
 
 $('#filtro-material-modulo').addEventListener('change', cargarMateriales);
+$('#ver-materiales-baja').addEventListener('change', cargarMateriales);
 
-$('#btn-nuevo-material').addEventListener('click', () => {
-  $('#form-material').reset();
-  $('#material-fecha').value = hoyServidor || fechaISOArgentina();
-  $('#material-modulo').value = $('#filtro-material-modulo').value || '';
+function abrirModalMaterial(material) {
+  $('#modal-material-titulo').textContent = material ? 'Editar material' : 'Agregar material';
+  $('#material-id').value = material ? material.id : '';
+  $('#material-fecha').value = material ? material.fecha : (hoyServidor || fechaISOArgentina());
+  $('#material-modulo').value = material ? (material.modulo_id || '') : ($('#filtro-material-modulo').value || '');
+  $('#material-descripcion').value = material ? material.descripcion : '';
+  $('#material-cantidad').value = material && material.cantidad != null ? material.cantidad : '';
+  $('#material-unidad').value = material ? (material.unidad || '') : '';
+  $('#material-estado').value = material ? material.estado : 'Pendiente';
+  $('#material-proveedor').value = material ? (material.proveedor || '') : '';
+  $('#material-notas').value = material ? (material.notas || '') : '';
+  $('#material-comprobante').value = '';
+  $('#material-quitar-comprobante').checked = false;
+  $('#material-quitar-comprobante-caja').classList.toggle('oculto', !(material && material.comprobante_archivo));
   $('#material-error').classList.add('oculto');
   $('#modal-material').showModal();
-});
+}
+
+$('#btn-nuevo-material').addEventListener('click', () => abrirModalMaterial(null));
 
 $('#form-material').addEventListener('submit', async (e) => {
   e.preventDefault();
   $('#material-error').classList.add('oculto');
-  const costoTexto = $('#material-costo').value.trim();
-  const costo = costoTexto ? parsearMontoAR(costoTexto) : null;
-  if (costoTexto && !Number.isFinite(costo)) return mostrarError('#material-error', 'El costo no se entiende. Escribilo como 150.000');
+  const id = $('#material-id').value;
   const datos = new FormData();
   datos.append('fecha', $('#material-fecha').value);
   datos.append('modulo_id', $('#material-modulo').value);
@@ -634,13 +638,13 @@ $('#form-material').addEventListener('submit', async (e) => {
   datos.append('unidad', $('#material-unidad').value.trim());
   datos.append('estado', $('#material-estado').value);
   datos.append('proveedor', $('#material-proveedor').value.trim());
-  if (costo != null) datos.append('costo', costo);
   datos.append('notas', $('#material-notas').value.trim());
+  if ($('#material-quitar-comprobante').checked) datos.append('quitar_comprobante', '1');
   if ($('#material-comprobante').files[0]) datos.append('comprobante', $('#material-comprobante').files[0]);
   try {
-    await api('/api/materiales', { method: 'POST', body: datos });
+    await api(id ? `/api/materiales/${id}` : '/api/materiales', { method: id ? 'PUT' : 'POST', body: datos });
     $('#modal-material').close();
-    aviso('Material guardado');
+    aviso(id ? 'Material actualizado' : 'Material guardado');
     cargarMateriales();
   } catch (err) {
     mostrarError('#material-error', err.message);
@@ -658,12 +662,26 @@ $('#tabla-materiales').addEventListener('change', async (e) => {
 });
 
 $('#tabla-materiales').addEventListener('click', async (e) => {
-  const borrar = e.target.closest('[data-borrar-material]');
-  if (!borrar) return;
-  if (!confirm('¿Borrar este material?')) return;
-  await api(`/api/materiales/${borrar.dataset.borrarMaterial}`, { method: 'DELETE' });
-  aviso('Material borrado');
-  cargarMateriales();
+  const editar = e.target.closest('[data-editar-material]');
+  const baja = e.target.closest('[data-baja-material]');
+  if (editar) {
+    const material = materialesCache.find((m) => String(m.id) === editar.dataset.editarMaterial);
+    if (material) abrirModalMaterial(material);
+  }
+  if (baja) {
+    const activo = baja.dataset.activo === '1';
+    const material = materialesCache.find((m) => String(m.id) === baja.dataset.bajaMaterial);
+    const texto = activo
+      ? `¿Dar de baja "${material.descripcion}"? Deja de aparecer en el listado pero queda el registro.`
+      : `¿Reactivar "${material.descripcion}"?`;
+    if (!confirm(texto)) return;
+    await api(`/api/materiales/${baja.dataset.bajaMaterial}/activo`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ activo: !activo })
+    });
+    aviso(activo ? 'Material dado de baja' : 'Material reactivado');
+    cargarMateriales();
+  }
 });
 
 // ---------- Documentación ----------

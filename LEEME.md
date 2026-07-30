@@ -33,8 +33,10 @@ repositorio es de acceso público.
   - *Cronograma:* calendario mensual con los días que tienen trabajo cargado y las
     fechas objetivo de entrega. Muestra el **avance general de la obra**, que es el
     promedio sobre el total de módulos activos, y la barra de cada módulo.
-  - *Materiales:* pedidos y consumos por módulo, con cantidad, unidad, proveedor,
-    costo, comprobante y estado (pedido → recibido → consumido).
+  - *Materiales:* qué se pide y para qué módulo va destinado, con fecha, cantidad,
+    unidad, proveedor, comprobante y estado (**pendiente → pedido → comprado**),
+    cambiable desde el mismo listado. Se pueden editar y dar de baja; la baja es
+    lógica, conserva el registro de lo que se había pedido.
   - *Documentación:* planos, manuales, certificados y checklists de cada módulo.
 - **Vehículos:** alta, edición y baja de los vehículos de la empresa
   (marca, modelo, patente, año, combustible, kilometraje, chofer, **si es propio
