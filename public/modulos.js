@@ -582,7 +582,6 @@ async function cargarMateriales() {
       <td>${escapar(m.bien_capital || 'Sin asignar')}</td>
       <td>${escapar(m.descripcion)}${m.notas ? `<small class="celda-nota">${escapar(m.notas)}</small>` : ''}</td>
       <td class="num">${m.cantidad != null ? Number(m.cantidad).toLocaleString('es-AR') + (m.unidad ? ' ' + escapar(m.unidad) : '') : '–'}</td>
-      <td>${escapar(m.proveedor || '–')}</td>
       <td>
         <select class="select-estado" data-valor="${escapar(m.estado)}" data-estado-material="${m.id}">
           ${['Pedido', 'Comprado'].map((op) => `<option ${op === m.estado ? 'selected' : ''}>${op}</option>`).join('')}
@@ -619,7 +618,6 @@ function abrirModalMaterial(material) {
   $('#material-cantidad').value = material && material.cantidad != null ? material.cantidad : '';
   $('#material-unidad').value = material ? (material.unidad || '') : '';
   $('#material-estado').value = material ? material.estado : 'Pedido';
-  $('#material-proveedor').value = material ? (material.proveedor || '') : '';
   $('#material-notas').value = material ? (material.notas || '') : '';
   $('#material-comprobante').value = '';
   $('#material-quitar-comprobante').checked = false;
@@ -641,7 +639,6 @@ $('#form-material').addEventListener('submit', async (e) => {
   datos.append('cantidad', $('#material-cantidad').value);
   datos.append('unidad', $('#material-unidad').value.trim());
   datos.append('estado', $('#material-estado').value);
-  datos.append('proveedor', $('#material-proveedor').value.trim());
   datos.append('notas', $('#material-notas').value.trim());
   if ($('#material-quitar-comprobante').checked) datos.append('quitar_comprobante', '1');
   if ($('#material-comprobante').files[0]) datos.append('comprobante', $('#material-comprobante').files[0]);

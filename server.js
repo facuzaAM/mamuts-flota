@@ -1058,7 +1058,6 @@ function datosMaterial(body) {
       cantidad: numeroONull(body.cantidad),
       unidad: textoONull(body.unidad),
       estado: ESTADOS_MATERIAL.includes(body.estado) ? body.estado : 'Pedido',
-      proveedor: textoONull(body.proveedor),
       notas: textoONull(body.notas)
     }
   };
@@ -1073,8 +1072,8 @@ app.post('/api/materiales', requiereLogin, (req, res) => {
       return res.status(400).json({ error });
     }
     const info = db.prepare(`
-      INSERT INTO materiales (modulo_id, fecha, descripcion, cantidad, unidad, estado, proveedor, notas, comprobante_archivo)
-      VALUES (@modulo_id, @fecha, @descripcion, @cantidad, @unidad, @estado, @proveedor, @notas, @comprobante_archivo)
+      INSERT INTO materiales (modulo_id, fecha, descripcion, cantidad, unidad, estado, notas, comprobante_archivo)
+      VALUES (@modulo_id, @fecha, @descripcion, @cantidad, @unidad, @estado, @notas, @comprobante_archivo)
     `).run({ ...datos, comprobante_archivo: req.file ? req.file.filename : null });
     res.json({ ok: true, id: info.lastInsertRowid });
   });
@@ -1098,7 +1097,7 @@ app.put('/api/materiales/:id', requiereLogin, (req, res) => {
     else if (req.body.quitar_comprobante === '1') { borrarAdjunto(actual.comprobante_archivo); comprobante = null; }
     db.prepare(`
       UPDATE materiales SET modulo_id=@modulo_id, fecha=@fecha, descripcion=@descripcion, cantidad=@cantidad,
-        unidad=@unidad, estado=@estado, proveedor=@proveedor, notas=@notas, comprobante_archivo=@comprobante_archivo
+        unidad=@unidad, estado=@estado, notas=@notas, comprobante_archivo=@comprobante_archivo
       WHERE id=@id
     `).run({ ...datos, comprobante_archivo: comprobante, id: actual.id });
     res.json({ ok: true });
