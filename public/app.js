@@ -202,7 +202,73 @@ function irASeccion(nombre) {
   if (nombre === 'contactos') cargarContactos();
   if (nombre === 'finanzas') cargarFinanzas();
   if (nombre === 'usuarios') cargarUsuarios();
+  if (nombre === 'operaciones') cargarReportes();
 }
+
+// ---------- Reporte diario de operaciones ----------
+async function cargarReportes() {
+  const reportes = await api('/api/reportes');
+  $('#reportes-vacio').classList.toggle('oculto', reportes.length > 0);
+
+  // Agrupados por mes, del más nuevo al más viejo
+  const meses = new Map();
+  reportes.forEach((r) => {
+    const mes = r.fecha.slice(0, 7);
+    if (!meses.has(mes)) meses.set(mes, []);
+    meses.get(mes).push(r);
+  });
+
+  $('#lista-reportes').innerHTML = [...meses.entries()].map(([mes, filas]) => `
+    <div class="reportes-mes">
+      <h4>${escapar(nombreMes(mes))} <span>${filas.length} ${filas.length === 1 ? 'reporte' : 'reportes'}</span></h4>
+      <table class="tabla">
+        <thead><tr><th>Fecha</th><th>Archivo</th><th></th></tr></thead>
+        <tbody>
+          ${filas.map((r) => `
+            <tr>
+              <td>${formatearFecha(r.fecha)}</td>
+              <td>${celdaComprobante(r.archivo)}</td>
+              <td class="num celda-acciones"><button class="btn btn-chico btn-peligro" data-borrar-reporte="${r.id}">Eliminar</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `).join('');
+}
+
+$('#btn-nuevo-reporte').addEventListener('click', () => {
+  $('#form-reporte').reset();
+  $('#reporte-fecha').value = fechaISOArgentina();
+  $('#reporte-error').classList.add('oculto');
+  $('#modal-reporte').showModal();
+});
+
+$('#form-reporte').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#reporte-error').classList.add('oculto');
+  const archivo = $('#reporte-archivo').files[0];
+  if (!archivo) return mostrarError('#reporte-error', 'Adjuntá el reporte');
+  const datos = new FormData();
+  datos.append('fecha', $('#reporte-fecha').value);
+  datos.append('archivo', archivo);
+  try {
+    await api('/api/reportes', { method: 'POST', body: datos });
+    $('#modal-reporte').close();
+    aviso('Reporte subido');
+    cargarReportes();
+  } catch (err) {
+    mostrarError('#reporte-error', err.message);
+  }
+});
+
+$('#lista-reportes').addEventListener('click', async (e) => {
+  const borrar = e.target.closest('[data-borrar-reporte]');
+  if (!borrar) return;
+  if (!confirm('¿Eliminar este reporte? Se borra también el archivo.')) return;
+  await api(`/api/reportes/${borrar.dataset.borrarReporte}`, { method: 'DELETE' });
+  aviso('Reporte eliminado');
+  cargarReportes();
+});
 
 document.querySelectorAll('.nav-item').forEach((btn) => {
   btn.addEventListener('click', () => irASeccion(btn.dataset.seccion));

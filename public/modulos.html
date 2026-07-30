@@ -101,27 +101,15 @@
           <h3>Historial de intervenciones</h3>
           <div id="detalle-historial"></div>
         </div>
-        <div class="detalle-grilla bloque-margen">
-          <div class="bloque">
-            <h3>Materiales del módulo</h3>
-            <div class="tabla-scroll">
-              <table class="tabla" id="tabla-detalle-materiales">
-                <thead><tr><th>Fecha</th><th>Material</th><th class="num">Cant.</th><th>Estado</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-            <p id="detalle-sin-materiales" class="texto-vacio oculto">Sin materiales registrados.</p>
+        <div class="bloque bloque-margen">
+          <h3>Documentación del módulo</h3>
+          <div class="tabla-scroll">
+            <table class="tabla" id="tabla-detalle-docs">
+              <thead><tr><th>Tipo</th><th>Título</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
           </div>
-          <div class="bloque">
-            <h3>Documentación del módulo</h3>
-            <div class="tabla-scroll">
-              <table class="tabla" id="tabla-detalle-docs">
-                <thead><tr><th>Tipo</th><th>Título</th><th></th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-            <p id="detalle-sin-docs" class="texto-vacio oculto">Sin documentación cargada.</p>
-          </div>
+          <p id="detalle-sin-docs" class="texto-vacio oculto">Sin documentación cargada.</p>
         </div>
       </section>
 
@@ -196,7 +184,7 @@
           </div>
         </div>
         <div class="filtros">
-          <label>Destino <select id="filtro-material-modulo"><option value="">Todos</option></select></label>
+          <label>Buscar <input type="search" id="filtro-material-texto" placeholder="Material o destino"></label>
           <span id="material-resumen" class="filtro-resumen"></span>
         </div>
         <div class="tabla-scroll">
@@ -329,9 +317,7 @@
       <input type="hidden" id="material-id">
       <div class="grilla-2">
         <label>Fecha del pedido * <input type="date" id="material-fecha" required></label>
-        <label>Destino: ¿para qué módulo es?
-          <select id="material-modulo"><option value="">Sin asignar</option></select>
-        </label>
+        <label>Destino: ¿para qué es? <input type="text" id="material-destino" placeholder="Adónde va este material"></label>
       </div>
       <label>Material * <input type="text" id="material-descripcion" required placeholder="Qué material se necesita"></label>
       <div class="grilla-3">

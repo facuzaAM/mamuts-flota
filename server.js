@@ -815,6 +815,33 @@ app.get('/api/dashboard', requiereLogin, (req, res) => {
   res.json(d);
 });
 
+// ---------- Operaciones · Reporte diario ----------
+app.get('/api/reportes', requiereLogin, (req, res) => {
+  res.json(db.prepare('SELECT * FROM reportes_diarios ORDER BY fecha DESC, id DESC').all());
+});
+
+app.post('/api/reportes', requiereLogin, (req, res) => {
+  subida.single('archivo')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    const fecha = String((req.body || {}).fecha || '').trim() || hoyAR();
+    if (!req.file || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      if (req.file) borrarAdjunto(req.file.filename);
+      return res.status(400).json({ error: req.file ? 'La fecha es inválida' : 'Adjuntá el reporte' });
+    }
+    const info = db.prepare('INSERT INTO reportes_diarios (fecha, archivo, creado_por) VALUES (?, ?, ?)')
+      .run(fecha, req.file.filename, req.usuario.username);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+});
+
+app.delete('/api/reportes/:id', requiereLogin, (req, res) => {
+  const reporte = db.prepare('SELECT * FROM reportes_diarios WHERE id = ?').get(req.params.id);
+  if (!reporte) return res.status(404).json({ error: 'Reporte no encontrado' });
+  db.prepare('DELETE FROM reportes_diarios WHERE id = ?').run(reporte.id);
+  borrarAdjunto(reporte.archivo);
+  res.json({ ok: true });
+});
+
 // ---------- Operaciones · Módulos habitacionales ----------
 const ESTADOS_MODULO = ['Pendiente', 'En reparación', 'Terminado', 'Entregado'];
 
@@ -861,7 +888,6 @@ app.get('/api/modulos/:id', requiereLogin, (req, res) => {
   for (const p of modulo.partes) {
     p.fotos = db.prepare('SELECT * FROM parte_fotos WHERE parte_id = ?').all(p.id);
   }
-  modulo.materiales = db.prepare('SELECT * FROM materiales WHERE modulo_id = ? AND activo = 1 ORDER BY fecha DESC, id DESC').all(modulo.id);
   modulo.documentos = db.prepare('SELECT * FROM documentos_modulo WHERE modulo_id = ? ORDER BY id DESC').all(modulo.id);
   res.json(modulo);
 });
@@ -1031,17 +1057,11 @@ app.post('/api/modulos/:id/avance', requiereLogin, (req, res) => {
 const ESTADOS_MATERIAL = ['Pedido', 'Comprado'];
 
 app.get('/api/materiales', requiereLogin, (req, res) => {
-  const moduloId = parseInt(req.query.modulo_id, 10);
-  const condiciones = [];
-  const valores = [];
-  if (req.query.inactivos !== '1') condiciones.push('mat.activo = 1');
-  if (Number.isFinite(moduloId)) { condiciones.push('mat.modulo_id = ?'); valores.push(moduloId); }
   const filas = db.prepare(`
-    SELECT mat.*, m.bien_capital FROM materiales mat
-    LEFT JOIN modulos m ON m.id = mat.modulo_id
-    ${condiciones.length ? 'WHERE ' + condiciones.join(' AND ') : ''}
-    ORDER BY mat.activo DESC, mat.fecha DESC, mat.id DESC
-  `).all(...valores);
+    SELECT * FROM materiales
+    ${req.query.inactivos === '1' ? '' : 'WHERE activo = 1'}
+    ORDER BY activo DESC, fecha DESC, id DESC
+  `).all();
   res.json(filas);
 });
 
@@ -1050,10 +1070,9 @@ function datosMaterial(body) {
   if (!descripcion) return { error: 'Escribí qué material es' };
   const fecha = String(body.fecha || '').trim() || hoyAR();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { error: 'La fecha es inválida' };
-  const moduloId = parseInt(body.modulo_id, 10);
   return {
     datos: {
-      modulo_id: Number.isFinite(moduloId) ? moduloId : null,
+      destino: textoONull(body.destino),
       fecha, descripcion,
       cantidad: numeroONull(body.cantidad),
       unidad: textoONull(body.unidad),
@@ -1072,8 +1091,8 @@ app.post('/api/materiales', requiereLogin, (req, res) => {
       return res.status(400).json({ error });
     }
     const info = db.prepare(`
-      INSERT INTO materiales (modulo_id, fecha, descripcion, cantidad, unidad, estado, notas, comprobante_archivo)
-      VALUES (@modulo_id, @fecha, @descripcion, @cantidad, @unidad, @estado, @notas, @comprobante_archivo)
+      INSERT INTO materiales (destino, fecha, descripcion, cantidad, unidad, estado, notas, comprobante_archivo)
+      VALUES (@destino, @fecha, @descripcion, @cantidad, @unidad, @estado, @notas, @comprobante_archivo)
     `).run({ ...datos, comprobante_archivo: req.file ? req.file.filename : null });
     res.json({ ok: true, id: info.lastInsertRowid });
   });
@@ -1096,7 +1115,7 @@ app.put('/api/materiales/:id', requiereLogin, (req, res) => {
     if (req.file) { borrarAdjunto(actual.comprobante_archivo); comprobante = req.file.filename; }
     else if (req.body.quitar_comprobante === '1') { borrarAdjunto(actual.comprobante_archivo); comprobante = null; }
     db.prepare(`
-      UPDATE materiales SET modulo_id=@modulo_id, fecha=@fecha, descripcion=@descripcion, cantidad=@cantidad,
+      UPDATE materiales SET destino=@destino, fecha=@fecha, descripcion=@descripcion, cantidad=@cantidad,
         unidad=@unidad, estado=@estado, notas=@notas, comprobante_archivo=@comprobante_archivo
       WHERE id=@id
     `).run({ ...datos, comprobante_archivo: comprobante, id: actual.id });

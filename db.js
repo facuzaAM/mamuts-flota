@@ -177,6 +177,16 @@ CREATE TABLE IF NOT EXISTS documentos_modulo (
   creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
+-- Reporte diario de operaciones: solo la fecha y el PDF; el detalle va adentro del archivo
+CREATE TABLE IF NOT EXISTS reportes_diarios (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fecha TEXT NOT NULL,
+  archivo TEXT NOT NULL,
+  creado_por TEXT,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_reportes_fecha ON reportes_diarios(fecha);
 CREATE INDEX IF NOT EXISTS idx_modulo_fotos ON modulo_fotos(modulo_id);
 CREATE INDEX IF NOT EXISTS idx_partes_fecha ON partes_diarios(fecha);
 CREATE INDEX IF NOT EXISTS idx_partes_modulo ON partes_diarios(modulo_id);
@@ -201,6 +211,12 @@ asegurarColumna('vehiculos', 'foto_archivo', 'foto_archivo TEXT');
 asegurarColumna('vehiculos', 'propiedad', "propiedad TEXT NOT NULL DEFAULT 'Propio'");
 // La baja de materiales es lógica: deja de aparecer pero se conserva el registro
 asegurarColumna('materiales', 'activo', 'activo INTEGER NOT NULL DEFAULT 1');
+// El destino pasó a ser texto libre; los que apuntaban a un módulo conservan su nombre
+asegurarColumna('materiales', 'destino', 'destino TEXT');
+db.exec(`
+  UPDATE materiales SET destino = (SELECT bien_capital FROM modulos WHERE modulos.id = materiales.modulo_id)
+  WHERE destino IS NULL AND modulo_id IS NOT NULL
+`);
 // Los estados viejos pasan a los dos que se usan hoy: Pedido y Comprado
 db.exec("UPDATE materiales SET estado = 'Comprado' WHERE estado IN ('Recibido', 'Consumido')");
 db.exec("UPDATE materiales SET estado = 'Pedido' WHERE estado = 'Pendiente'");

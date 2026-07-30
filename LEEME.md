@@ -21,7 +21,9 @@ repositorio es de acceso público.
 
 - **Operaciones:** las actividades que la empresa está realizando. Cada una abre
   su propio sistema en una pestaña aparte, con la misma sesión (no pide login de
-  nuevo). Hoy hay una: **Módulos Habitacionales**.
+  nuevo). Hoy hay una: **Módulos Habitacionales**. Abajo está el **Reporte Diario
+  de Operaciones**: se sube el PDF de cada jornada y queda listado por mes con su
+  fecha; el detalle va adentro del archivo.
 - **Módulos Habitacionales** (reparación de casillas), con cinco solapas:
   - *Inventario:* cada módulo por su **n° de bien de capital**, con tipo, medidas,
     cliente, ubicación, estado, fecha objetivo y fotos. La ficha ("Ver") muestra
@@ -33,10 +35,10 @@ repositorio es de acceso público.
   - *Cronograma:* calendario mensual con los días que tienen trabajo cargado y las
     fechas objetivo de entrega. Muestra el **avance general de la obra**, que es el
     promedio sobre el total de módulos activos, y la barra de cada módulo.
-  - *Materiales:* qué se pide y para qué módulo va destinado, con fecha, cantidad,
-    unidad, proveedor, comprobante y estado (**pedido → comprado**),
-    cambiable desde el mismo listado. Se pueden editar y dar de baja; la baja es
-    lógica, conserva el registro de lo que se había pedido.
+  - *Materiales:* qué se pide y adónde va destinado (texto libre), con fecha,
+    cantidad, unidad, comprobante y estado (**pedido → comprado**), cambiable
+    desde el mismo listado. Hay buscador por material o destino. Se pueden editar
+    y dar de baja; la baja es lógica, conserva el registro de lo que se pidió.
   - *Documentación:* planos, manuales, certificados y checklists de cada módulo.
 - **Vehículos:** alta, edición y baja de los vehículos de la empresa
   (marca, modelo, patente, año, combustible, kilometraje, chofer, **si es propio

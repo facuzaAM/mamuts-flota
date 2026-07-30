@@ -229,6 +229,16 @@
             <span class="actividad-flecha">Abrir ↗</span>
           </a>
         </div>
+
+        <div class="bloque bloque-margen">
+          <div class="bloque-encabezado">
+            <h3>Reporte Diario de Operaciones</h3>
+            <button id="btn-nuevo-reporte" class="btn btn-primario btn-chico">+ Subir reporte</button>
+          </div>
+          <p class="nota-bloque">Se guarda el archivo con su fecha. El detalle de la jornada va adentro del PDF.</p>
+          <div id="lista-reportes"></div>
+          <p id="reportes-vacio" class="texto-vacio oculto">Todavía no hay reportes subidos.</p>
+        </div>
       </section>
 
       <!-- Nómina -->
@@ -670,6 +680,22 @@
     <div class="modal-botones">
       <button type="button" class="btn" data-cerrar>Cerrar</button>
     </div>
+  </dialog>
+
+  <!-- Reporte diario de operaciones -->
+  <dialog id="modal-reporte">
+    <form id="form-reporte" method="dialog">
+      <h3>Subir reporte diario</h3>
+      <label>Fecha del reporte * <input type="date" id="reporte-fecha" required></label>
+      <label class="campo-archivo">Archivo * (PDF o imagen)
+        <input type="file" id="reporte-archivo" accept="application/pdf,image/jpeg,image/png,image/webp" required>
+      </label>
+      <div id="reporte-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Subir</button>
+      </div>
+    </form>
   </dialog>
 
   <script src="app.js"></script>

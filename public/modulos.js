@@ -173,13 +173,9 @@ function refrescarSelectoresModulo() {
   const activos = modulosCache.filter((m) => m.activo);
   const opciones = activos.map((m) => `<option value="${m.id}">${escapar(m.bien_capital)}${m.tipo ? ' · ' + escapar(m.tipo) : ''}</option>`).join('');
   $('#parte-modulo').innerHTML = '<option value="">Elegí el módulo…</option>' + opciones;
-  $('#material-modulo').innerHTML = '<option value="">Sin asignar</option>' + opciones;
   $('#documento-modulo').innerHTML = '<option value="">Sin asignar</option>' + opciones;
-  const anteriorMat = $('#filtro-material-modulo').value;
   const anteriorDoc = $('#filtro-doc-modulo').value;
-  $('#filtro-material-modulo').innerHTML = '<option value="">Todos</option>' + opciones;
   $('#filtro-doc-modulo').innerHTML = '<option value="">Todos</option>' + opciones;
-  $('#filtro-material-modulo').value = anteriorMat;
   $('#filtro-doc-modulo').value = anteriorDoc;
 }
 
@@ -291,16 +287,6 @@ async function abrirDetalle(id) {
   $('#detalle-historial').innerHTML = m.partes.length
     ? m.partes.map((p) => tarjetaParte(p, false)).join('')
     : '<p class="texto-vacio">Todavía no se cargó ninguna jornada de trabajo para este módulo.</p>';
-
-  $('#tabla-detalle-materiales tbody').innerHTML = m.materiales.map((mat) => `
-    <tr>
-      <td>${formatearFecha(mat.fecha)}</td>
-      <td>${escapar(mat.descripcion)}</td>
-      <td class="num">${mat.cantidad != null ? Number(mat.cantidad).toLocaleString('es-AR') + (mat.unidad ? ' ' + escapar(mat.unidad) : '') : '–'}</td>
-      <td>${etiquetaEstado(mat.estado)}</td>
-    </tr>
-  `).join('');
-  $('#detalle-sin-materiales').classList.toggle('oculto', m.materiales.length > 0);
 
   $('#tabla-detalle-docs tbody').innerHTML = m.documentos.map((d) => `
     <tr>
@@ -570,16 +556,15 @@ $('#cal-dias').addEventListener('click', (e) => {
 let materialesCache = [];
 
 async function cargarMateriales() {
-  const filtro = $('#filtro-material-modulo').value;
-  const parametros = new URLSearchParams();
-  if (filtro) parametros.set('modulo_id', filtro);
-  if ($('#ver-materiales-baja').checked) parametros.set('inactivos', '1');
-  const consulta = parametros.toString();
-  materialesCache = await api('/api/materiales' + (consulta ? `?${consulta}` : ''));
-  $('#tabla-materiales tbody').innerHTML = materialesCache.map((m) => `
+  materialesCache = await api('/api/materiales' + ($('#ver-materiales-baja').checked ? '?inactivos=1' : ''));
+  const busqueda = $('#filtro-material-texto').value.trim().toLowerCase();
+  const visibles = busqueda
+    ? materialesCache.filter((m) => `${m.descripcion} ${m.destino || ''}`.toLowerCase().includes(busqueda))
+    : materialesCache;
+  $('#tabla-materiales tbody').innerHTML = visibles.map((m) => `
     <tr>
       <td>${formatearFecha(m.fecha)}${m.activo ? '' : ' <span class="etiqueta etiqueta-baja">BAJA</span>'}</td>
-      <td>${escapar(m.bien_capital || 'Sin asignar')}</td>
+      <td>${escapar(m.destino || '–')}</td>
       <td>${escapar(m.descripcion)}${m.notas ? `<small class="celda-nota">${escapar(m.notas)}</small>` : ''}</td>
       <td class="num">${m.cantidad != null ? Number(m.cantidad).toLocaleString('es-AR') + (m.unidad ? ' ' + escapar(m.unidad) : '') : '–'}</td>
       <td>
@@ -594,7 +579,7 @@ async function cargarMateriales() {
       </td>
     </tr>
   `).join('');
-  $('#materiales-vacio').classList.toggle('oculto', materialesCache.length > 0);
+  $('#materiales-vacio').classList.toggle('oculto', visibles.length > 0);
   pintarResumenMateriales();
 }
 
@@ -606,14 +591,14 @@ function pintarResumenMateriales() {
   $('#material-resumen').textContent = materialesCache.length ? porEstado : '';
 }
 
-$('#filtro-material-modulo').addEventListener('change', cargarMateriales);
+$('#filtro-material-texto').addEventListener('input', cargarMateriales);
 $('#ver-materiales-baja').addEventListener('change', cargarMateriales);
 
 function abrirModalMaterial(material) {
   $('#modal-material-titulo').textContent = material ? 'Editar material' : 'Agregar material';
   $('#material-id').value = material ? material.id : '';
   $('#material-fecha').value = material ? material.fecha : (hoyServidor || fechaISOArgentina());
-  $('#material-modulo').value = material ? (material.modulo_id || '') : ($('#filtro-material-modulo').value || '');
+  $('#material-destino').value = material ? (material.destino || '') : '';
   $('#material-descripcion').value = material ? material.descripcion : '';
   $('#material-cantidad').value = material && material.cantidad != null ? material.cantidad : '';
   $('#material-unidad').value = material ? (material.unidad || '') : '';
@@ -634,7 +619,7 @@ $('#form-material').addEventListener('submit', async (e) => {
   const id = $('#material-id').value;
   const datos = new FormData();
   datos.append('fecha', $('#material-fecha').value);
-  datos.append('modulo_id', $('#material-modulo').value);
+  datos.append('destino', $('#material-destino').value.trim());
   datos.append('descripcion', $('#material-descripcion').value.trim());
   datos.append('cantidad', $('#material-cantidad').value);
   datos.append('unidad', $('#material-unidad').value.trim());
