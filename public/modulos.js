@@ -584,7 +584,7 @@ async function cargarMateriales() {
       <td class="num">${m.cantidad != null ? Number(m.cantidad).toLocaleString('es-AR') + (m.unidad ? ' ' + escapar(m.unidad) : '') : '–'}</td>
       <td>${escapar(m.proveedor || '–')}</td>
       <td>
-        <select class="select-estado" data-estado-material="${m.id}">
+        <select class="select-estado" data-valor="${escapar(m.estado)}" data-estado-material="${m.id}">
           ${['Pendiente', 'Pedido', 'Comprado'].map((op) => `<option ${op === m.estado ? 'selected' : ''}>${op}</option>`).join('')}
         </select>
       </td>
@@ -596,6 +596,10 @@ async function cargarMateriales() {
     </tr>
   `).join('');
   $('#materiales-vacio').classList.toggle('oculto', materialesCache.length > 0);
+  pintarResumenMateriales();
+}
+
+function pintarResumenMateriales() {
   const activos = materialesCache.filter((m) => m.activo);
   const porEstado = ['Pendiente', 'Pedido', 'Comprado']
     .map((e) => `${activos.filter((m) => m.estado === e).length} ${e.toLowerCase()}`)
@@ -658,6 +662,9 @@ $('#tabla-materiales').addEventListener('change', async (e) => {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ estado: sel.value })
   });
+  sel.dataset.valor = sel.value; // repinta el color sin recargar la tabla
+  const material = materialesCache.find((m) => String(m.id) === sel.dataset.estadoMaterial);
+  if (material) { material.estado = sel.value; pintarResumenMateriales(); }
   aviso('Estado actualizado');
 });
 

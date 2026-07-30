@@ -238,24 +238,24 @@
       <h3 id="modal-modulo-titulo">Agregar módulo</h3>
       <input type="hidden" id="modulo-id">
       <div class="grilla-2">
-        <label>N° de bien de capital * <input type="text" id="modulo-bien" required placeholder="Ej: BC-10452"></label>
+        <label>N° de bien de capital * <input type="text" id="modulo-bien" required placeholder="Número de bien de capital"></label>
         <label>Tipo de módulo
-          <input type="text" id="modulo-tipo" list="tipos-modulo" placeholder="Ej: Dormitorio 4 camas">
+          <input type="text" id="modulo-tipo" list="tipos-modulo" placeholder="Para qué se usa el módulo">
           <datalist id="tipos-modulo">
             <option>Dormitorio</option><option>Oficina</option><option>Comedor</option>
             <option>Baño / Sanitario</option><option>Cocina</option><option>Enfermería</option>
             <option>Depósito</option><option>Sala de máquinas</option>
           </datalist>
         </label>
-        <label>Cliente <input type="text" id="modulo-cliente" placeholder="Ej: YPF"></label>
-        <label>Ubicación <input type="text" id="modulo-ubicacion" placeholder="Ej: Taller / Yacimiento"></label>
+        <label>Cliente <input type="text" id="modulo-cliente" placeholder="Para quién es el trabajo"></label>
+        <label>Ubicación <input type="text" id="modulo-ubicacion" placeholder="Dónde está el módulo"></label>
       </div>
       <fieldset class="campo-grupo">
         <legend>Medidas (metros)</legend>
         <div class="grilla-3">
-          <label>Largo <input type="number" id="modulo-largo" step="0.01" min="0" placeholder="Ej: 12,20"></label>
-          <label>Ancho <input type="number" id="modulo-ancho" step="0.01" min="0" placeholder="Ej: 2,50"></label>
-          <label>Alto <input type="number" id="modulo-alto" step="0.01" min="0" placeholder="Ej: 2,60"></label>
+          <label>Largo <input type="number" id="modulo-largo" step="0.01" min="0" placeholder="Largo en metros"></label>
+          <label>Ancho <input type="number" id="modulo-ancho" step="0.01" min="0" placeholder="Ancho en metros"></label>
+          <label>Alto <input type="number" id="modulo-alto" step="0.01" min="0" placeholder="Alto en metros"></label>
         </div>
       </fieldset>
       <div class="grilla-2">
@@ -283,7 +283,7 @@
       <label class="campo-archivo">Fotos (podés elegir varias)
         <input type="file" id="fotos-archivos" accept="image/jpeg,image/png,image/webp" multiple required>
       </label>
-      <label>Descripción <input type="text" id="fotos-descripcion" placeholder="Ej: Estado al ingresar / Techo reparado (opcional)"></label>
+      <label>Descripción <input type="text" id="fotos-descripcion" placeholder="Qué se ve en las fotos (opcional)"></label>
       <div id="fotos-error" class="mensaje-error oculto"></div>
       <div class="modal-botones">
         <button type="button" class="btn" data-cerrar>Cancelar</button>
@@ -300,7 +300,7 @@
         <label>Fecha * <input type="date" id="parte-fecha" required></label>
         <label>Módulo en el que se trabajó * <select id="parte-modulo" required></select></label>
       </div>
-      <label>Actividades realizadas * <textarea id="parte-actividades" rows="4" required placeholder="Ej: Se cambiaron dos paneles del techo, se masilló y lijó la pared norte."></textarea></label>
+      <label>Actividades realizadas * <textarea id="parte-actividades" rows="4" required placeholder="Contá qué se hizo hoy en el módulo"></textarea></label>
       <div class="grilla-2">
         <label>Responsable <input type="text" id="parte-responsable" placeholder="Quién estuvo a cargo (opcional)"></label>
         <label>Avance del módulo tras esta jornada
@@ -333,11 +333,11 @@
           <select id="material-modulo"><option value="">Sin asignar</option></select>
         </label>
       </div>
-      <label>Material * <input type="text" id="material-descripcion" required placeholder="Ej: Chapa galvanizada C25"></label>
+      <label>Material * <input type="text" id="material-descripcion" required placeholder="Qué material se necesita"></label>
       <div class="grilla-3">
-        <label>Cantidad <input type="number" id="material-cantidad" step="0.01" min="0" placeholder="Ej: 12"></label>
+        <label>Cantidad <input type="number" id="material-cantidad" step="0.01" min="0" placeholder="Cuánto"></label>
         <label>Unidad
-          <input type="text" id="material-unidad" list="unidades-material" placeholder="Ej: m²">
+          <input type="text" id="material-unidad" list="unidades-material" placeholder="Unidad">
           <datalist id="unidades-material">
             <option>unidad</option><option>m</option><option>m²</option><option>m³</option>
             <option>kg</option><option>litro</option><option>caja</option><option>rollo</option>
@@ -370,13 +370,13 @@
     <form id="form-documento" method="dialog">
       <h3>Agregar documento</h3>
       <label>Tipo *
-        <input type="text" id="documento-tipo" required list="tipos-documento" placeholder="Ej: Plano">
+        <input type="text" id="documento-tipo" required list="tipos-documento" placeholder="Qué clase de documento es">
         <datalist id="tipos-documento">
           <option>Plano</option><option>Manual</option><option>Certificado</option>
           <option>Checklist</option><option>Fotografía</option><option>Remito</option><option>Otro</option>
         </datalist>
       </label>
-      <label>Título <input type="text" id="documento-titulo" placeholder="Ej: Plano eléctrico (opcional)"></label>
+      <label>Título <input type="text" id="documento-titulo" placeholder="Cómo identificarlo (opcional)"></label>
       <label>Módulo <select id="documento-modulo"><option value="">Sin asignar</option></select></label>
       <label class="campo-archivo">Archivo * (imagen o PDF)
         <input type="file" id="documento-archivo" accept="image/jpeg,image/png,image/webp,application/pdf" required>

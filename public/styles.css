@@ -354,6 +354,13 @@ body {
   font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tinta);
 }
 .select-estado { padding: 4px 6px; font-size: 12.5px; width: auto; min-width: 110px; margin: 0; }
+/* Mismos colores que las etiquetas del resto del sistema */
+.select-estado[data-valor="Pedido"] {
+  background: #fef3c7; border-color: #e0c068; color: #92400e; font-weight: 700;
+}
+.select-estado[data-valor="Comprado"] {
+  background: #e8f4ea; border-color: #a8cdb0; color: var(--verde); font-weight: 700;
+}
 .celda-nota { display: block; color: var(--texto-suave); font-size: 12px; margin-top: 2px; }
 @media (max-width: 900px) { .panel-columnas { grid-template-columns: 1fr; } }
 
