@@ -40,6 +40,10 @@
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg>
           Panel
         </button>
+        <button class="nav-item" data-seccion="actualizaciones" data-perm="ver_actualizaciones">
+          <svg viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M20.5 4v5h-5"/><path d="M12 8v4.5l3 1.8"/></svg>
+          Actualizaciones
+        </button>
         <button class="nav-item" data-seccion="vehiculos" data-perm-any="ver_vehiculos,editar_vehiculos">
           <svg viewBox="0 0 24 24"><path d="M1.5 6.5h12v9h-12z"/><path d="M13.5 10h4l3.5 3.5v2h-7.5"/><circle cx="6" cy="17.8" r="1.9"/><circle cx="16.8" cy="17.8" r="1.9"/></svg>
           Vehículos
@@ -51,6 +55,10 @@
         <button class="nav-item" data-seccion="operaciones">
           <svg viewBox="0 0 24 24"><path d="M3 17.5h4.5l3-9 3 12 3-9 1.7 6h2.8"/></svg>
           Operaciones
+        </button>
+        <button class="nav-item" data-seccion="panol" data-perm-any="ver_panol,editar_panol">
+          <svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>
+          Pañol
         </button>
         <button class="nav-item" data-seccion="nomina" data-perm-any="ver_nomina,editar_nomina">
           <svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><circle cx="8.5" cy="10.8" r="2.1"/><path d="M5.4 16.6c.7-1.8 1.8-2.6 3.1-2.6s2.4.8 3.1 2.6"/><path d="M14.5 9.5h4.5M14.5 13h4.5"/></svg>
@@ -83,23 +91,46 @@
 
       <!-- Panel -->
       <section id="seccion-panel" class="seccion">
-        <h2>Panel general</h2>
+        <div class="seccion-encabezado">
+          <h2>Panel general</h2>
+          <div class="acciones">
+            <label class="filtro-inline">Mes <input type="month" id="filtro-mes-panel"></label>
+            <button id="btn-mes-actual" class="btn btn-chico">Mes actual</button>
+          </div>
+        </div>
         <div class="tarjetas">
           <div class="tarjeta" data-perm="ver_vehiculos"><span class="tarjeta-valor" id="stat-vehiculos">–</span><span class="tarjeta-titulo">Vehículos activos</span></div>
-          <div class="tarjeta" data-perm="ver_vales"><span class="tarjeta-valor" id="stat-vales-mes">–</span><span class="tarjeta-titulo">Vales este mes</span></div>
-          <div class="tarjeta" data-perm="ver_totales_litros"><span class="tarjeta-valor" id="stat-litros-mes">–</span><span class="tarjeta-titulo">Litros este mes</span></div>
-          <div class="tarjeta" data-perm="ver_totales_gastos"><span class="tarjeta-valor" id="stat-gasto-mes">–</span><span class="tarjeta-titulo">Gasto este mes</span></div>
+          <div class="tarjeta" data-perm="ver_vales"><span class="tarjeta-valor" id="stat-vales-mes">–</span><span class="tarjeta-titulo" id="tit-vales-mes">Vales del mes</span></div>
+          <div class="tarjeta" data-perm="ver_totales_litros"><span class="tarjeta-valor" id="stat-litros-mes">–</span><span class="tarjeta-titulo" id="tit-litros-mes">Litros del mes</span></div>
+          <div class="tarjeta" data-perm="ver_totales_litros"><span class="tarjeta-valor" id="stat-litros-anio">–</span><span class="tarjeta-titulo" id="tit-litros-anio">Litros del año</span></div>
+          <div class="tarjeta" data-perm="ver_panol"><span class="tarjeta-valor" id="stat-panol">–</span><span class="tarjeta-titulo">Materiales bajo el mínimo</span></div>
         </div>
         <div class="panel-columnas">
+          <div class="bloque">
+            <h3>Últimas novedades</h3>
+            <ul class="lista-novedades" id="panel-novedades"></ul>
+            <button class="btn btn-chico" id="btn-ver-todas-novedades" data-perm="ver_actualizaciones">Ver todas las actualizaciones</button>
+          </div>
+          <div class="bloque" data-perm="ver_totales_litros">
+            <h3 id="tit-litros-por-mes">Litros mes a mes</h3>
+            <div class="tabla-scroll">
+              <table class="tabla" id="tabla-litros-mes">
+                <thead><tr><th>Mes</th><th class="num">Litros</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="panel-columnas panel-columnas-margen">
           <div class="bloque" data-perm="ver_vales">
-            <h3>Últimos vales</h3>
+            <h3 id="tit-ultimos-vales">Vales del mes</h3>
             <table class="tabla" id="tabla-ultimos-vales">
               <thead><tr><th>Fecha</th><th>Vehículo</th><th class="num">Litros</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
           <div class="bloque" data-perm="ver_totales_litros">
-            <h3>Mayor consumo del mes</h3>
+            <h3 id="tit-top-vehiculos">Mayor consumo del mes</h3>
             <table class="tabla" id="tabla-top-vehiculos">
               <thead><tr><th>Vehículo</th><th class="num">Litros</th></tr></thead>
               <tbody></tbody>
@@ -242,6 +273,46 @@
       </section>
 
       <!-- Nómina -->
+      <!-- Pañol -->
+      <section id="seccion-panol" class="seccion oculto">
+        <div class="seccion-encabezado">
+          <h2>Pañol</h2>
+          <div class="acciones">
+            <label class="check-inline"><input type="checkbox" id="ver-bajas-panol"> Mostrar dados de baja</label>
+            <button id="btn-nuevo-material" class="btn btn-primario" data-perm="editar_panol">+ Agregar material</button>
+          </div>
+        </div>
+        <div class="filtros">
+          <label>Buscar <input type="text" id="buscar-material" placeholder="Nombre, descripción, ubicación…"></label>
+          <label class="check-inline solo-faltantes"><input type="checkbox" id="solo-faltantes"> Solo los que están por debajo del mínimo</label>
+          <span class="filtro-resumen" id="panol-resumen"></span>
+        </div>
+        <div class="tabla-scroll">
+          <table class="tabla" id="tabla-materiales">
+            <thead>
+              <tr><th>Material</th><th>Descripción</th><th>Ubicación</th><th>Ingreso</th><th class="num">Cantidad</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="materiales-vacio" class="texto-vacio oculto">Todavía no hay materiales cargados en el pañol.</p>
+      </section>
+
+      <!-- Actualizaciones -->
+      <section id="seccion-actualizaciones" class="seccion oculto">
+        <h2>Actualizaciones</h2>
+        <p class="texto-ayuda">Todo lo que se va agregando o cambiando en el sistema, lo más reciente primero. Solo se muestran las áreas a las que tenés acceso.</p>
+        <div class="filtros">
+          <label>Área
+            <select id="filtro-area-actividad"><option value="">Todas</option></select>
+          </label>
+          <button id="btn-refrescar-actividad" class="btn btn-chico">Actualizar</button>
+          <span class="filtro-resumen" id="actividad-resumen"></span>
+        </div>
+        <ul class="linea-tiempo" id="lista-actividad"></ul>
+        <p id="actividad-vacio" class="texto-vacio oculto">Todavía no hay novedades registradas.</p>
+      </section>
+
       <section id="seccion-nomina" class="seccion oculto">
         <div class="seccion-encabezado">
           <h2>Nómina</h2>
@@ -567,6 +638,48 @@
         <button type="submit" class="btn btn-primario">Guardar</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- ===== Modal material del pañol ===== -->
+  <dialog id="modal-material" class="modal-amplio">
+    <form id="form-material" method="dialog">
+      <h3 id="modal-material-titulo">Agregar material</h3>
+      <input type="hidden" id="mat-id">
+      <div class="grilla-2">
+        <label>Material * <input type="text" id="mat-nombre" required placeholder="Ej: Guantes de nitrilo"></label>
+        <label>Unidad <input type="text" id="mat-unidad" list="unidades-panol" placeholder="Ej: unidades, cajas, litros">
+          <datalist id="unidades-panol"><option>unidades</option><option>cajas</option><option>pares</option><option>litros</option><option>metros</option><option>kg</option><option>rollos</option><option>bidones</option></datalist>
+        </label>
+        <label id="mat-cantidad-caja">Cantidad inicial <input type="number" id="mat-cantidad" step="1" min="0" placeholder="Ej: 20"></label>
+        <label>Stock mínimo (para avisar) <input type="number" id="mat-minimo" step="1" min="0" placeholder="Ej: 5 (opcional)"></label>
+        <label>Ubicación en el pañol <input type="text" id="mat-ubicacion" placeholder="Ej: Estante A, caja 3"></label>
+        <label>Fecha de ingreso <input type="date" id="mat-fecha"></label>
+      </div>
+      <label>Descripción detallada
+        <textarea id="mat-descripcion" rows="3" placeholder="Describí bien qué es: por ejemplo &quot;20 cajas de 10 unidades cada una (200 en total), talle L, marca X&quot;"></textarea>
+      </label>
+      <div id="mat-error" class="mensaje-error oculto"></div>
+      <div class="modal-botones">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== Modal historial del material ===== -->
+  <dialog id="modal-historial" class="modal-amplio">
+    <h3 id="hist-titulo">Historial del material</h3>
+    <dl class="lista-datos" id="hist-datos"></dl>
+    <div class="tabla-scroll" style="margin-top:14px">
+      <table class="tabla" id="tabla-historial">
+        <thead><tr><th>Fecha</th><th class="num">Movimiento</th><th class="num">Quedaron</th><th>Motivo</th><th>Usuario</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p id="hist-vacio" class="texto-vacio oculto">Sin movimientos registrados.</p>
+    <div class="modal-botones">
+      <button type="button" class="btn" data-cerrar>Cerrar</button>
+    </div>
   </dialog>
 
   <!-- ===== Modal empleado ===== -->

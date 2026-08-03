@@ -186,6 +186,46 @@ CREATE TABLE IF NOT EXISTS reportes_diarios (
   creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
+-- ===== Pañol: stock de materiales del depósito =====
+-- Tablas propias (panol_*) para no mezclarse con los materiales de Operaciones
+CREATE TABLE IF NOT EXISTS panol_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  descripcion TEXT,
+  cantidad REAL NOT NULL DEFAULT 0,
+  unidad TEXT,
+  minimo REAL,
+  ubicacion TEXT,
+  fecha_ingreso TEXT,
+  activo INTEGER NOT NULL DEFAULT 1,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS panol_movimientos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  item_id INTEGER NOT NULL REFERENCES panol_items(id),
+  fecha TEXT NOT NULL,
+  delta REAL NOT NULL,
+  cantidad_final REAL NOT NULL,
+  motivo TEXT,
+  usuario TEXT,
+  creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+-- Bitácora general del sistema (sección Actualizaciones)
+CREATE TABLE IF NOT EXISTS actividad (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fecha TEXT NOT NULL,
+  usuario TEXT,
+  area TEXT NOT NULL,
+  accion TEXT NOT NULL,
+  detalle TEXT,
+  entidad_id INTEGER,
+  permiso TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_panol_mov ON panol_movimientos(item_id);
+CREATE INDEX IF NOT EXISTS idx_actividad_id ON actividad(id DESC);
 CREATE INDEX IF NOT EXISTS idx_reportes_fecha ON reportes_diarios(fecha);
 CREATE INDEX IF NOT EXISTS idx_modulo_fotos ON modulo_fotos(modulo_id);
 CREATE INDEX IF NOT EXISTS idx_partes_fecha ON partes_diarios(fecha);

@@ -145,7 +145,9 @@ function seccionInicial() {
   if (puedePanel) return 'panel';
   if (puede('ver_vehiculos') || puede('editar_vehiculos')) return 'vehiculos';
   if (puede('cargar_vales') || puede('ver_vales')) return 'vales';
+  if (puede('ver_panol') || puede('editar_panol')) return 'panol';
   if (puede('ver_nomina') || puede('editar_nomina')) return 'nomina';
+  if (puede('ver_actualizaciones')) return 'actualizaciones';
   if (puede('ver_contactos') || puede('editar_contactos')) return 'contactos';
   if (puede('cargar_gastos') || puede('ver_gastos')) return 'finanzas';
   return 'config';
@@ -198,6 +200,8 @@ function irASeccion(nombre) {
   if (nombre === 'panel') cargarPanel();
   if (nombre === 'vehiculos') cargarVehiculos();
   if (nombre === 'vales') cargarVales();
+  if (nombre === 'panol') cargarPanol();
+  if (nombre === 'actualizaciones') cargarActualizaciones();
   if (nombre === 'nomina') cargarNomina();
   if (nombre === 'contactos') cargarContactos();
   if (nombre === 'finanzas') cargarFinanzas();
@@ -279,26 +283,62 @@ document.querySelectorAll('dialog [data-cerrar]').forEach((btn) => {
 });
 
 // ---------- Panel ----------
+function textoNovedad(n) {
+  const cuando = n.fecha ? new Date(n.fecha).toLocaleString('es-AR', { timeZone: TZ_ARGENTINA, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+  return { cuando, quien: n.usuario || 'sistema' };
+}
+
 async function cargarPanel() {
-  const d = await api('/api/dashboard');
+  if (!$('#filtro-mes-panel').value) $('#filtro-mes-panel').value = mesActualArgentina();
+  const mes = $('#filtro-mes-panel').value || mesActualArgentina();
+  const d = await api('/api/dashboard?mes=' + encodeURIComponent(mes));
+  const nomMes = nombreMes(mes);
+  const anio = mes.slice(0, 4);
+
   if ('vehiculos_activos' in d) $('#stat-vehiculos').textContent = d.vehiculos_activos;
-  if ('vales_mes' in d) $('#stat-vales-mes').textContent = d.vales_mes;
-  if ('litros_mes' in d) $('#stat-litros-mes').textContent = formatearLitros(d.litros_mes);
-  if ('gasto_mes' in d) $('#stat-gasto-mes').textContent = formatearDinero(d.gasto_mes);
+  if ('vales_mes' in d) { $('#stat-vales-mes').textContent = d.vales_mes; $('#tit-vales-mes').textContent = `Vales de ${nomMes}`; }
+  if ('litros_mes' in d) { $('#stat-litros-mes').textContent = formatearLitros(d.litros_mes); $('#tit-litros-mes').textContent = `Litros de ${nomMes}`; }
+  if ('litros_anio' in d) { $('#stat-litros-anio').textContent = formatearLitros(d.litros_anio); $('#tit-litros-anio').textContent = `Litros del año ${anio}`; }
+  if ('panol_bajo_minimo' in d) $('#stat-panol').textContent = d.panol_bajo_minimo;
+
+  $('#tit-ultimos-vales').textContent = `Vales de ${nomMes}`;
+  $('#tit-top-vehiculos').textContent = `Mayor consumo de ${nomMes}`;
+  $('#tit-litros-por-mes').textContent = `Litros mes a mes (${anio})`;
 
   if (d.ultimos_vales) {
     $('#tabla-ultimos-vales tbody').innerHTML = d.ultimos_vales.length
       ? d.ultimos_vales.map((v) => `<tr><td>${formatearFecha(v.fecha)}</td><td>${escapar(v.marca)} ${escapar(v.modelo)} · ${escapar(v.patente)}</td><td class="num">${formatearLitros(v.litros)}</td></tr>`).join('')
-      : '<tr><td colspan="3" class="texto-vacio">Sin vales todavía</td></tr>';
+      : `<tr><td colspan="3" class="texto-vacio">Sin vales en ${nomMes}</td></tr>`;
   }
   if (d.top_vehiculos_mes) {
     $('#tabla-top-vehiculos tbody').innerHTML = d.top_vehiculos_mes.length
       ? d.top_vehiculos_mes.map((v) => `<tr><td>${escapar(v.marca)} ${escapar(v.modelo)} · ${escapar(v.patente)}</td><td class="num">${formatearLitros(v.litros)}</td></tr>`).join('')
-      : '<tr><td colspan="2" class="texto-vacio">Sin consumo este mes</td></tr>';
+      : `<tr><td colspan="2" class="texto-vacio">Sin consumo en ${nomMes}</td></tr>`;
   }
-  const algo = window.ES_ADMIN || ['ver_vehiculos', 'ver_vales', 'ver_totales_litros', 'ver_totales_gastos'].some(puede);
+  if (d.litros_por_mes) {
+    const totalAnio = d.litros_por_mes.reduce((s, m) => s + m.litros, 0);
+    $('#tabla-litros-mes tbody').innerHTML = d.litros_por_mes.length
+      ? d.litros_por_mes.map((m) => `<tr${m.mes === mes ? ' class="fila-total"' : ''}><td><a href="#" data-mes-panel="${m.mes}">${nombreMes(m.mes)}</a></td><td class="num">${formatearLitros(m.litros)}</td></tr>`).join('') +
+        `<tr class="fila-total"><td><strong>Total ${anio}</strong></td><td class="num"><strong>${formatearLitros(totalAnio)}</strong></td></tr>`
+      : `<tr><td colspan="2" class="texto-vacio">Sin consumo registrado en ${anio}</td></tr>`;
+  }
+  if (d.novedades) {
+    $('#panel-novedades').innerHTML = d.novedades.length
+      ? d.novedades.map((n) => { const t = textoNovedad(n);
+          return `<li><div class="act-accion">${escapar(n.area)} · ${escapar(n.accion)}</div>${n.detalle ? `<div class="act-detalle">${escapar(n.detalle)}</div>` : ''}<div class="act-meta">${escapar(t.cuando)} · ${escapar(t.quien)}</div></li>`; }).join('')
+      : '<li class="texto-suave">Todavía no hay novedades.</li>';
+  }
+  const algo = window.ES_ADMIN || ['ver_vehiculos', 'ver_vales', 'ver_totales_litros', 'ver_panol'].some(puede);
   $('#panel-vacio').classList.toggle('oculto', algo);
 }
+
+$('#filtro-mes-panel').addEventListener('change', cargarPanel);
+$('#btn-mes-actual').addEventListener('click', () => { $('#filtro-mes-panel').value = mesActualArgentina(); cargarPanel(); });
+$('#btn-ver-todas-novedades').addEventListener('click', () => irASeccion('actualizaciones'));
+$('#tabla-litros-mes').addEventListener('click', (e) => {
+  const link = e.target.closest('[data-mes-panel]');
+  if (link) { e.preventDefault(); $('#filtro-mes-panel').value = link.dataset.mesPanel; cargarPanel(); }
+});
 
 // ---------- Selectores de vehículo (para vales y gastos) ----------
 function pintarSelectoresVehiculo() {
@@ -782,6 +822,228 @@ $('#form-doc').addEventListener('submit', async (e) => {
     abrirDetalleEmpleado(detalleEmpleadoId);
   } catch (err) { mostrarError('#doc-error', err.message); }
 });
+
+// ---------- Pañol ----------
+let materialesCache = [];
+
+async function cargarPanol() {
+  const todos = $('#ver-bajas-panol').checked;
+  materialesCache = await api(`/api/panol${todos ? '?todos=1' : ''}`);
+  dibujarMateriales();
+}
+
+function dibujarMateriales() {
+  const buscar = $('#buscar-material').value.trim().toLowerCase();
+  const soloFaltantes = $('#solo-faltantes').checked;
+  const filas = materialesCache.filter((m) => {
+    if (soloFaltantes && !(m.minimo != null && m.cantidad <= m.minimo)) return false;
+    if (!buscar) return true;
+    return [m.nombre, m.descripcion, m.ubicacion, m.unidad].some((c) => c && c.toLowerCase().includes(buscar));
+  });
+  const faltantes = materialesCache.filter((m) => m.minimo != null && m.cantidad <= m.minimo).length;
+  $('#panol-resumen').textContent = `${materialesCache.length} material${materialesCache.length === 1 ? '' : 'es'}${faltantes ? ` · ${faltantes} bajo el mínimo` : ''}`;
+  $('#materiales-vacio').classList.toggle('oculto', filas.length > 0);
+
+  const puedeEditar = puede('editar_panol');
+  $('#tabla-materiales tbody').innerHTML = filas.map((m) => {
+    const bajo = m.minimo != null && m.cantidad <= m.minimo;
+    const unidad = m.unidad ? `<span class="cantidad-unidad">${escapar(m.unidad)}</span>` : '';
+    return `<tr class="${bajo ? 'fila-faltante' : ''}">
+      <td><strong>${escapar(m.nombre)}</strong>${m.activo ? '' : ' <span class="etiqueta etiqueta-baja">BAJA</span>'}
+        ${bajo ? `<br><span class="etiqueta etiqueta-alerta">Bajo el mínimo (${m.minimo})</span>` : ''}</td>
+      <td><div class="desc-material">${escapar(m.descripcion || '')}</div></td>
+      <td>${escapar(m.ubicacion || '')}</td>
+      <td>${m.fecha_ingreso ? formatearFecha(m.fecha_ingreso) : ''}</td>
+      <td class="num">
+        <div class="control-cantidad">
+          ${puedeEditar ? `<button class="btn btn-flecha btn-flecha-menos" data-mat-menos="${m.id}" title="Restar uno">−</button>
+          <input type="number" class="cantidad-input" data-mat-cantidad="${m.id}" value="${m.cantidad}" min="0" step="1" title="Escribí la cantidad exacta">
+          <button class="btn btn-flecha btn-flecha-mas" data-mat-mas="${m.id}" title="Sumar uno">+</button>`
+        : `<span class="cantidad-valor">${Number(m.cantidad).toLocaleString('es-AR')}</span>`}
+          ${unidad}
+        </div>
+      </td>
+      <td class="num celda-acciones">
+        <button class="btn btn-chico" data-mat-hist="${m.id}">Historial</button>
+        ${puedeEditar ? `<button class="btn btn-chico" data-mat-editar="${m.id}">Editar</button>
+        <button class="btn btn-chico ${m.activo ? 'btn-peligro' : ''}" data-mat-baja="${m.id}" data-activo="${m.activo}">${m.activo ? 'Baja' : 'Alta'}</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Guarda la cantidad final. Si se toca la flechita varias veces seguidas,
+// espera un momento y manda un solo ajuste (evita una petición por clic).
+const guardadoPendiente = new Map();
+function programarGuardadoCantidad(id, cantidad) {
+  clearTimeout(guardadoPendiente.get(id));
+  guardadoPendiente.set(id, setTimeout(() => guardarCantidad(id, cantidad), 500));
+}
+
+async function guardarCantidad(id, cantidad) {
+  guardadoPendiente.delete(id);
+  const material = materialesCache.find((m) => m.id === id);
+  if (!material || cantidad === material.cantidad) return;
+  const input = $(`[data-mat-cantidad="${id}"]`);
+  try {
+    const r = await api(`/api/panol/${id}/movimiento`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cantidad })
+    });
+    const antes = material.cantidad;
+    material.cantidad = r.cantidad;
+    if (input) input.value = r.cantidad;
+    const dif = r.cantidad - antes;
+    aviso(`${material.nombre}: ${dif > 0 ? '+' + dif : dif} → quedan ${r.cantidad}${material.unidad ? ' ' + material.unidad : ''}`);
+    marcarFaltante(id);
+  } catch (err) {
+    if (input) input.value = material.cantidad; // revertir si el servidor rechazó
+    aviso(err.message);
+  }
+}
+
+// Resalta la fila si quedó por debajo del mínimo, sin redibujar la tabla
+function marcarFaltante(id) {
+  const material = materialesCache.find((m) => m.id === id);
+  const fila = $(`[data-mat-cantidad="${id}"]`)?.closest('tr');
+  if (!material || !fila) return;
+  fila.classList.toggle('fila-faltante', material.minimo != null && material.cantidad <= material.minimo);
+  const faltantes = materialesCache.filter((m) => m.minimo != null && m.cantidad <= m.minimo).length;
+  $('#panol-resumen').textContent = `${materialesCache.length} material${materialesCache.length === 1 ? '' : 'es'}${faltantes ? ` · ${faltantes} bajo el mínimo` : ''}`;
+}
+
+$('#tabla-materiales').addEventListener('change', (e) => {
+  const input = e.target.closest('[data-mat-cantidad]');
+  if (!input) return;
+  const valor = Math.max(0, Math.round(parseFloat(input.value) || 0));
+  input.value = valor;
+  guardarCantidad(Number(input.dataset.matCantidad), valor);
+});
+$('#tabla-materiales').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.closest('[data-mat-cantidad]')) { e.preventDefault(); e.target.blur(); }
+});
+
+$('#buscar-material').addEventListener('input', dibujarMateriales);
+$('#solo-faltantes').addEventListener('change', dibujarMateriales);
+$('#ver-bajas-panol').addEventListener('change', cargarPanol);
+$('#btn-nuevo-material').addEventListener('click', () => abrirModalMaterial(null));
+
+$('#tabla-materiales').addEventListener('click', async (e) => {
+  const menos = e.target.closest('[data-mat-menos]');
+  const mas = e.target.closest('[data-mat-mas]');
+  const hist = e.target.closest('[data-mat-hist]');
+  const editar = e.target.closest('[data-mat-editar]');
+  const baja = e.target.closest('[data-mat-baja]');
+  if (menos || mas) {
+    const id = Number(mas ? mas.dataset.matMas : menos.dataset.matMenos);
+    const input = $(`[data-mat-cantidad="${id}"]`);
+    const actual = Math.max(0, Math.round(parseFloat(input.value) || 0));
+    const nueva = Math.max(0, actual + (mas ? 1 : -1));
+    if (nueva === actual) return; // ya está en 0, no baja más
+    input.value = nueva;
+    programarGuardadoCantidad(id, nueva);
+    return;
+  }
+  if (hist) { abrirHistorial(Number(hist.dataset.matHist)); return; }
+  if (editar) { abrirModalMaterial(materialesCache.find((m) => m.id === Number(editar.dataset.matEditar))); return; }
+  if (baja) {
+    const m = materialesCache.find((x) => x.id === Number(baja.dataset.matBaja));
+    const activo = baja.dataset.activo === '1';
+    if (!confirm(activo ? `¿Dar de baja "${m.nombre}"? Su historial se conserva.` : `¿Reactivar "${m.nombre}"?`)) return;
+    await api(`/api/panol/${m.id}/activo`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activo: !activo }) });
+    aviso(activo ? 'Material dado de baja' : 'Material reactivado');
+    cargarPanol();
+  }
+});
+
+function abrirModalMaterial(m) {
+  $('#modal-material-titulo').textContent = m ? `Editar ${m.nombre}` : 'Agregar material';
+  $('#mat-id').value = m ? m.id : '';
+  $('#mat-nombre').value = m ? m.nombre : '';
+  $('#mat-unidad').value = m && m.unidad ? m.unidad : '';
+  $('#mat-cantidad').value = m ? m.cantidad : '';
+  $('#mat-minimo').value = m && m.minimo != null ? m.minimo : '';
+  $('#mat-ubicacion').value = m && m.ubicacion ? m.ubicacion : '';
+  $('#mat-fecha').value = m && m.fecha_ingreso ? m.fecha_ingreso : fechaISOArgentina();
+  $('#mat-descripcion').value = m && m.descripcion ? m.descripcion : '';
+  // Al editar, la cantidad se cambia con las flechitas (para que quede historial)
+  $('#mat-cantidad-caja').classList.toggle('oculto', !!m);
+  $('#mat-error').classList.add('oculto');
+  $('#modal-material').showModal();
+}
+
+$('#form-material').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = $('#mat-id').value;
+  const cuerpo = {
+    nombre: $('#mat-nombre').value, unidad: $('#mat-unidad').value, cantidad: $('#mat-cantidad').value,
+    minimo: $('#mat-minimo').value, ubicacion: $('#mat-ubicacion').value,
+    fecha_ingreso: $('#mat-fecha').value, descripcion: $('#mat-descripcion').value
+  };
+  try {
+    await api(id ? `/api/panol/${id}` : '/api/panol', { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+    $('#modal-material').close();
+    aviso(id ? 'Material actualizado' : 'Material agregado');
+    cargarPanol();
+  } catch (err) { mostrarError('#mat-error', err.message); }
+});
+
+async function abrirHistorial(id) {
+  const d = await api(`/api/panol/${id}`);
+  const m = d.item;
+  $('#hist-titulo').textContent = 'Historial: ' + m.nombre;
+  const datos = [
+    ['Cantidad actual', Number(m.cantidad).toLocaleString('es-AR') + (m.unidad ? ' ' + m.unidad : '')],
+    ['Stock mínimo', m.minimo != null ? String(m.minimo) : '–'],
+    ['Ubicación', m.ubicacion || '–'],
+    ['Fecha de ingreso', m.fecha_ingreso ? formatearFecha(m.fecha_ingreso) : '–'],
+    ['Descripción', m.descripcion || '–']
+  ];
+  $('#hist-datos').innerHTML = datos.map(([k, v]) => `<div><dt>${k}</dt><dd>${escapar(v)}</dd></div>`).join('');
+  $('#hist-vacio').classList.toggle('oculto', d.movimientos.length > 0);
+  $('#tabla-historial tbody').innerHTML = d.movimientos.map((mv) => `
+    <tr>
+      <td>${formatearFecha(mv.fecha)}</td>
+      <td class="num" style="color:${mv.delta > 0 ? 'var(--verde)' : 'var(--rojo-hover)'}"><strong>${mv.delta > 0 ? '+' : ''}${mv.delta}</strong></td>
+      <td class="num">${mv.cantidad_final}</td>
+      <td>${escapar(mv.motivo || '')}</td>
+      <td>${escapar(mv.usuario || '')}</td>
+    </tr>`).join('');
+  $('#modal-historial').showModal();
+}
+
+// ---------- Actualizaciones ----------
+let actividadCache = [];
+
+async function cargarActualizaciones() {
+  actividadCache = await api('/api/actualizaciones?limite=150');
+  const areas = [...new Set(actividadCache.map((a) => a.area))].sort();
+  const actual = $('#filtro-area-actividad').value;
+  $('#filtro-area-actividad').innerHTML = '<option value="">Todas</option>' + areas.map((a) => `<option>${escapar(a)}</option>`).join('');
+  $('#filtro-area-actividad').value = actual;
+  dibujarActividad();
+}
+
+function dibujarActividad() {
+  const area = $('#filtro-area-actividad').value;
+  const filas = area ? actividadCache.filter((a) => a.area === area) : actividadCache;
+  $('#actividad-vacio').classList.toggle('oculto', filas.length > 0);
+  $('#actividad-resumen').textContent = filas.length ? `${filas.length} novedad${filas.length === 1 ? '' : 'es'}` : '';
+  $('#lista-actividad').innerHTML = filas.map((n) => {
+    const t = textoNovedad(n);
+    return `<li>
+      <div class="act-area">${escapar(n.area)}</div>
+      <div class="act-cuerpo">
+        <div class="act-accion">${escapar(n.accion)}</div>
+        ${n.detalle ? `<div class="act-detalle">${escapar(n.detalle)}</div>` : ''}
+        <div class="act-meta">${escapar(t.cuando)} · por ${escapar(t.quien)}</div>
+      </div>
+    </li>`;
+  }).join('');
+}
+
+$('#filtro-area-actividad').addEventListener('change', dibujarActividad);
+$('#btn-refrescar-actividad').addEventListener('click', cargarActualizaciones);
 
 // ---------- Contactos ----------
 async function cargarContactos() {

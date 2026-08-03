@@ -82,6 +82,20 @@ function borrarAdjunto(nombre) {
   if (fs.existsSync(ruta)) fs.unlinkSync(ruta);
 }
 
+// Bitácora: cada cambio queda registrado para la sección Actualizaciones.
+// `permiso` es el que hace falta para ver esa novedad (null = todos los usuarios).
+const stmtActividad = db.prepare(
+  'INSERT INTO actividad (fecha, usuario, area, accion, detalle, entidad_id, permiso) VALUES (?, ?, ?, ?, ?, ?, ?)'
+);
+function registrar(req, area, accion, detalle, permiso = null, entidadId = null) {
+  try {
+    stmtActividad.run(new Date().toISOString(), req.usuario ? req.usuario.username : null,
+      area, accion, detalle || null, entidadId, permiso);
+  } catch (e) {
+    console.error('No se pudo registrar la actividad:', e.message);
+  }
+}
+
 // ---------- Autenticación y permisos ----------
 const intentosLogin = new Map(); // ip -> { fallos, bloqueadoHasta }
 
@@ -93,6 +107,9 @@ const PERMISOS = {
   cargar_vales: 'Registrar vales de combustible',
   ver_vales: 'Ver el listado de vales',
   ver_totales_litros: 'Ver totales de litros por mes y año',
+  ver_panol: 'Ver el pañol y el stock de materiales',
+  editar_panol: 'Agregar materiales al pañol y ajustar cantidades',
+  ver_actualizaciones: 'Ver la sección Actualizaciones (novedades del sistema)',
   ver_nomina: 'Ver la nómina y los legajos del personal',
   editar_nomina: 'Agregar, editar y dar de baja personal y su documentación',
   ver_contactos: 'Ver contactos',
@@ -172,7 +189,9 @@ app.get('/api/permisos', requiereLogin, soloAdmin, (req, res) => {
   const grupos = [
     { titulo: 'Vehículos', claves: ['ver_vehiculos', 'editar_vehiculos', 'ver_consumo_vehiculo'] },
     { titulo: 'Vales de combustible', claves: ['cargar_vales', 'ver_vales', 'ver_totales_litros'] },
+    { titulo: 'Pañol', claves: ['ver_panol', 'editar_panol'] },
     { titulo: 'Nómina', claves: ['ver_nomina', 'editar_nomina'] },
+    { titulo: 'Actualizaciones', claves: ['ver_actualizaciones'] },
     { titulo: 'Contactos', claves: ['ver_contactos', 'editar_contactos'] },
     { titulo: 'Seguimiento contable', claves: ['cargar_gastos', 'ver_gastos', 'ver_totales_gastos'] }
   ].map((g) => ({ titulo: g.titulo, permisos: g.claves.map((c) => ({ clave: c, texto: PERMISOS[c] })) }));
@@ -207,6 +226,7 @@ app.post('/api/usuarios', requiereLogin, soloAdmin, (req, res) => {
   try {
     const info = db.prepare('INSERT INTO usuarios (username, nombre, password_hash, rol, permisos) VALUES (?, ?, ?, ?, ?)')
       .run(username, nombre, bcrypt.hashSync(password, 10), rol, permisos);
+    registrar(req, 'Usuarios', 'Usuario creado', `${username} (${rol === 'admin' ? 'administrador' : 'personalizada'})`, 'ver_usuarios_actividad', info.lastInsertRowid);
     res.json({ ok: true, id: info.lastInsertRowid });
   } catch (e) {
     if (String(e.message).includes('UNIQUE')) return res.status(400).json({ error: `Ya existe un usuario llamado "${username}"` });
@@ -346,6 +366,7 @@ app.post('/api/vehiculos', requiereLogin, requierePermiso('editar_vehiculos'), (
         INSERT INTO vehiculos (marca, modelo, patente, anio, tipo_combustible, kilometraje, chofer, propiedad, notas, foto_archivo)
         VALUES (@marca, @modelo, @patente, @anio, @tipo_combustible, @kilometraje, @chofer, @propiedad, @notas, @foto_archivo)
       `).run({ ...v.datos, foto_archivo: req.file ? req.file.filename : null });
+      registrar(req, 'Vehículos', 'Vehículo agregado', `${v.datos.patente} · ${v.datos.marca} ${v.datos.modelo}`, 'ver_vehiculos', info.lastInsertRowid);
       res.json({ ok: true, id: info.lastInsertRowid });
     } catch (e) {
       if (req.file) borrarAdjunto(req.file.filename);
@@ -471,6 +492,7 @@ app.post('/api/contactos', requiereLogin, requierePermiso('editar_contactos'), (
     INSERT INTO contactos (nombre, empresa, telefono, pais, categoria, notas)
     VALUES (@nombre, @empresa, @telefono, @pais, @categoria, @notas)
   `).run(c.datos);
+  registrar(req, 'Contactos', 'Contacto agregado', `${c.datos.nombre}${c.datos.empresa ? ' · ' + c.datos.empresa : ''}`, 'ver_contactos', info.lastInsertRowid);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 
@@ -537,6 +559,7 @@ app.post('/api/empleados', requiereLogin, requierePermiso('editar_nomina'), (req
     INSERT INTO empleados (nombre, dni_cuil, fecha_nacimiento, telefono, direccion, contacto_emergencia, puesto, fecha_ingreso, notas)
     VALUES (@nombre, @dni_cuil, @fecha_nacimiento, @telefono, @direccion, @contacto_emergencia, @puesto, @fecha_ingreso, @notas)
   `).run(e.datos);
+  registrar(req, 'Nómina', 'Persona agregada', `${e.datos.nombre}${e.datos.puesto ? ' · ' + e.datos.puesto : ''}`, 'ver_nomina', info.lastInsertRowid);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 
@@ -680,6 +703,7 @@ app.post('/api/gastos', requiereLogin, requierePermiso('cargar_gastos'), (req, r
       INSERT INTO gastos (fecha, categoria, descripcion, monto, vehiculo_id, comprobante_archivo, creado_por)
       VALUES (@fecha, @categoria, @descripcion, @monto, @vehiculo_id, @comprobante_archivo, @creado_por)
     `).run({ ...g.datos, comprobante_archivo: req.file ? req.file.filename : null, creado_por: req.usuario.username });
+    registrar(req, 'Contable', 'Gasto registrado', `${g.datos.categoria} · $${g.datos.monto}${g.datos.descripcion ? ' · ' + g.datos.descripcion : ''}`, 'ver_gastos', info.lastInsertRowid);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
 });
@@ -763,6 +787,8 @@ app.post('/api/vales', requiereLogin, requierePermiso('cargar_vales'), (req, res
       String(grado || '').trim() || null,
       Number.isFinite(montoNum) && montoNum > 0 ? montoNum : null
     );
+    const patente = db.prepare('SELECT patente FROM vehiculos WHERE id = ?').get(vehiculo_id).patente;
+    registrar(req, 'Combustible', 'Vale registrado', `${patente} · ${litrosNum} L${Number.isFinite(montoNum) && montoNum > 0 ? ' · $' + montoNum : ''}`, 'ver_vales', info.lastInsertRowid);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
 });
@@ -783,35 +809,158 @@ app.get('/uploads/:archivo', requiereLogin, (req, res) => {
   res.sendFile(ruta);
 });
 
+// ---------- Pañol (stock del depósito) ----------
+function validarItemPanol(body) {
+  const nombre = String(body.nombre || '').trim();
+  if (!nombre) return { error: 'El nombre del material es obligatorio' };
+  const cantidad = parseFloat(body.cantidad);
+  const minimo = parseFloat(body.minimo);
+  const fecha = String(body.fecha_ingreso || '').trim();
+  return {
+    datos: {
+      nombre,
+      descripcion: String(body.descripcion || '').trim() || null,
+      cantidad: Number.isFinite(cantidad) && cantidad >= 0 ? Math.round(cantidad) : 0,
+      unidad: String(body.unidad || '').trim() || null,
+      minimo: Number.isFinite(minimo) && minimo >= 0 ? Math.round(minimo) : null,
+      ubicacion: String(body.ubicacion || '').trim() || null,
+      fecha_ingreso: /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : hoyAR()
+    }
+  };
+}
+
+app.get('/api/panol', requiereLogin, requierePermiso('ver_panol'), (req, res) => {
+  const incluirInactivos = req.query.todos === '1';
+  res.json(db.prepare(`SELECT * FROM panol_items ${incluirInactivos ? '' : 'WHERE activo = 1'} ORDER BY nombre COLLATE NOCASE`).all());
+});
+
+app.get('/api/panol/:id', requiereLogin, requierePermiso('ver_panol'), (req, res) => {
+  const item = db.prepare('SELECT * FROM panol_items WHERE id = ?').get(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Material no encontrado' });
+  const movimientos = db.prepare('SELECT * FROM panol_movimientos WHERE item_id = ? ORDER BY id DESC LIMIT 50').all(item.id);
+  res.json({ item, movimientos });
+});
+
+app.post('/api/panol', requiereLogin, requierePermiso('editar_panol'), (req, res) => {
+  const m = validarItemPanol(req.body || {});
+  if (m.error) return res.status(400).json({ error: m.error });
+  const info = db.prepare(`
+    INSERT INTO panol_items (nombre, descripcion, cantidad, unidad, minimo, ubicacion, fecha_ingreso)
+    VALUES (@nombre, @descripcion, @cantidad, @unidad, @minimo, @ubicacion, @fecha_ingreso)
+  `).run(m.datos);
+  if (m.datos.cantidad > 0) {
+    db.prepare('INSERT INTO panol_movimientos (item_id, fecha, delta, cantidad_final, motivo, usuario) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(info.lastInsertRowid, hoyAR(), m.datos.cantidad, m.datos.cantidad, 'Carga inicial', req.usuario.username);
+  }
+  registrar(req, 'Pañol', 'Material agregado',
+    `${m.datos.nombre} · ${m.datos.cantidad}${m.datos.unidad ? ' ' + m.datos.unidad : ''}`, 'ver_panol', info.lastInsertRowid);
+  res.json({ ok: true, id: info.lastInsertRowid });
+});
+
+app.put('/api/panol/:id', requiereLogin, requierePermiso('editar_panol'), (req, res) => {
+  const actual = db.prepare('SELECT * FROM panol_items WHERE id = ?').get(req.params.id);
+  if (!actual) return res.status(404).json({ error: 'Material no encontrado' });
+  const m = validarItemPanol(req.body || {});
+  if (m.error) return res.status(400).json({ error: m.error });
+  // La cantidad no se toca acá: se ajusta con las flechitas para que quede historial
+  db.prepare(`
+    UPDATE panol_items SET nombre=@nombre, descripcion=@descripcion, unidad=@unidad,
+      minimo=@minimo, ubicacion=@ubicacion, fecha_ingreso=@fecha_ingreso WHERE id=@id
+  `).run({ ...m.datos, id: actual.id });
+  registrar(req, 'Pañol', 'Material editado', m.datos.nombre, 'ver_panol', actual.id);
+  res.json({ ok: true });
+});
+
+// Ajuste de stock: acepta la cantidad final (cantidad) o un ajuste relativo (delta)
+app.post('/api/panol/:id/movimiento', requiereLogin, requierePermiso('editar_panol'), (req, res) => {
+  const item = db.prepare('SELECT * FROM panol_items WHERE id = ?').get(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Material no encontrado' });
+  const body = req.body || {};
+  let delta;
+  if (body.cantidad !== undefined && body.cantidad !== null && body.cantidad !== '') {
+    const cantidadFinal = Math.round(parseFloat(body.cantidad));
+    if (!Number.isFinite(cantidadFinal) || cantidadFinal < 0) return res.status(400).json({ error: 'La cantidad no puede ser negativa' });
+    delta = cantidadFinal - item.cantidad;
+  } else {
+    delta = Math.round(parseFloat(body.delta));
+  }
+  if (!Number.isFinite(delta)) return res.status(400).json({ error: 'Cantidad inválida' });
+  if (delta === 0) return res.json({ ok: true, cantidad: item.cantidad, sin_cambios: true });
+  const nueva = item.cantidad + delta;
+  if (nueva < 0) return res.status(400).json({ error: `No hay stock suficiente (hay ${item.cantidad})` });
+  const motivo = String(body.motivo || '').trim() || null;
+  db.exec('BEGIN');
+  try {
+    db.prepare('UPDATE panol_items SET cantidad = ? WHERE id = ?').run(nueva, item.id);
+    db.prepare('INSERT INTO panol_movimientos (item_id, fecha, delta, cantidad_final, motivo, usuario) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(item.id, hoyAR(), delta, nueva, motivo, req.usuario.username);
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  registrar(req, 'Pañol', delta > 0 ? 'Ingreso de material' : 'Salida de material',
+    `${item.nombre}: ${delta > 0 ? '+' : ''}${delta}${item.unidad ? ' ' + item.unidad : ''} → quedan ${nueva}${motivo ? ' · ' + motivo : ''}`,
+    'ver_panol', item.id);
+  res.json({ ok: true, cantidad: nueva });
+});
+
+app.patch('/api/panol/:id/activo', requiereLogin, requierePermiso('editar_panol'), (req, res) => {
+  const activo = req.body && req.body.activo ? 1 : 0;
+  const item = db.prepare('SELECT nombre FROM panol_items WHERE id = ?').get(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Material no encontrado' });
+  db.prepare('UPDATE panol_items SET activo = ? WHERE id = ?').run(activo, req.params.id);
+  registrar(req, 'Pañol', activo ? 'Material reactivado' : 'Material dado de baja', item.nombre, 'ver_panol', Number(req.params.id));
+  res.json({ ok: true });
+});
+
+// ---------- Actualizaciones (novedades del sistema) ----------
+function novedadesVisibles(req, limite) {
+  return db.prepare('SELECT * FROM actividad ORDER BY id DESC LIMIT 400').all()
+    .filter((f) => !f.permiso || (f.permiso === 'ver_usuarios_actividad' ? req.usuario.rol === 'admin' : tiene(req, f.permiso)))
+    .slice(0, limite);
+}
+
+app.get('/api/actualizaciones', requiereLogin, (req, res) => {
+  const limite = Math.min(parseInt(req.query.limite, 10) || 60, 200);
+  res.json(novedadesVisibles(req, limite));
+});
+
 // ---------- Panel ----------
 app.get('/api/dashboard', requiereLogin, (req, res) => {
-  const inicioMes = inicioMesAR();
-  const d = {};
+  // Se puede consultar cualquier mes: al cambiar de mes no se "pierden" los datos
+  const mes = /^\d{4}-\d{2}$/.test(String(req.query.mes || '')) ? req.query.mes : hoyAR().slice(0, 7);
+  const [desde, hasta] = rangoMes(mes);
+  const anio = mes.slice(0, 4);
+  const enero = `${anio}-01-01`, diciembre = `${anio}-12-31`;
+  const d = { mes };
   if (tiene(req, 'ver_vehiculos')) {
     d.vehiculos_activos = db.prepare('SELECT COUNT(*) AS n FROM vehiculos WHERE activo = 1').get().n;
   }
   if (tiene(req, 'ver_vales')) {
-    d.vales_mes = db.prepare('SELECT COUNT(*) AS n FROM vales WHERE fecha >= ?').get(inicioMes).n;
+    d.vales_mes = db.prepare('SELECT COUNT(*) AS n FROM vales WHERE fecha >= ? AND fecha < ?').get(desde, hasta).n;
     d.ultimos_vales = db.prepare(`
       SELECT va.*, ve.marca, ve.modelo, ve.patente
       FROM vales va JOIN vehiculos ve ON ve.id = va.vehiculo_id
+      WHERE va.fecha >= ? AND va.fecha < ?
       ORDER BY va.fecha DESC, va.id DESC LIMIT 8
-    `).all();
+    `).all(desde, hasta);
   }
   if (tiene(req, 'ver_totales_litros')) {
-    d.litros_mes = db.prepare('SELECT COALESCE(SUM(litros), 0) AS n FROM vales WHERE fecha >= ?').get(inicioMes).n;
+    d.litros_mes = db.prepare('SELECT COALESCE(SUM(litros), 0) AS n FROM vales WHERE fecha >= ? AND fecha < ?').get(desde, hasta).n;
+    d.litros_anio = db.prepare('SELECT COALESCE(SUM(litros), 0) AS n FROM vales WHERE fecha >= ? AND fecha <= ?').get(enero, diciembre).n;
     d.top_vehiculos_mes = db.prepare(`
       SELECT ve.marca, ve.modelo, ve.patente, SUM(va.litros) AS litros
       FROM vales va JOIN vehiculos ve ON ve.id = va.vehiculo_id
-      WHERE va.fecha >= ?
+      WHERE va.fecha >= ? AND va.fecha < ?
       GROUP BY va.vehiculo_id ORDER BY litros DESC LIMIT 5
-    `).all(inicioMes);
+    `).all(desde, hasta);
+    d.litros_por_mes = db.prepare(`
+      SELECT substr(fecha, 1, 7) AS mes, SUM(litros) AS litros
+      FROM vales WHERE fecha >= ? AND fecha <= ? GROUP BY mes ORDER BY mes
+    `).all(enero, diciembre);
   }
-  if (tiene(req, 'ver_totales_gastos')) {
-    const g = db.prepare('SELECT COALESCE(SUM(monto), 0) AS n FROM gastos WHERE fecha >= ?').get(inicioMes).n;
-    const v = db.prepare('SELECT COALESCE(SUM(monto), 0) AS n FROM vales WHERE fecha >= ? AND monto IS NOT NULL').get(inicioMes).n;
-    d.gasto_mes = g + v;
+  if (tiene(req, 'ver_panol')) {
+    d.panol_bajo_minimo = db.prepare('SELECT COUNT(*) AS n FROM panol_items WHERE activo = 1 AND minimo IS NOT NULL AND cantidad <= minimo').get().n;
   }
+  d.novedades = novedadesVisibles(req, 6);
   res.json(d);
 });
 
@@ -830,6 +979,7 @@ app.post('/api/reportes', requiereLogin, (req, res) => {
     }
     const info = db.prepare('INSERT INTO reportes_diarios (fecha, archivo, creado_por) VALUES (?, ?, ?)')
       .run(fecha, req.file.filename, req.usuario.username);
+    registrar(req, 'Operaciones', 'Reporte diario cargado', `del ${fecha}`, null, info.lastInsertRowid);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
 });
@@ -921,6 +1071,7 @@ app.post('/api/modulos', requiereLogin, (req, res) => {
       INSERT INTO modulos (bien_capital, tipo, largo, ancho, alto, cliente, ubicacion, estado, fecha_objetivo, notas)
       VALUES (@bien_capital, @tipo, @largo, @ancho, @alto, @cliente, @ubicacion, @estado, @fecha_objetivo, @notas)
     `).run(datos);
+    registrar(req, 'Operaciones', 'Módulo agregado', datos.bien_capital, null, info.lastInsertRowid);
     res.json({ ok: true, id: info.lastInsertRowid });
   } catch (e) {
     res.status(400).json({ error: String(e.message).includes('UNIQUE') ? 'Ya existe un módulo con ese número de bien de capital' : 'No se pudo guardar el módulo' });
@@ -1030,6 +1181,8 @@ app.post('/api/partes', requiereLogin, (req, res) => {
     (req.files || []).forEach((f) => insertarFoto.run(parteId, f.filename));
     // El avance del parte pasa a ser el avance actual del módulo
     if (avance !== null) db.prepare('UPDATE modulos SET avance = ? WHERE id = ?').run(avance, modulo.id);
+    registrar(req, 'Operaciones', 'Parte diario cargado',
+      `${modulo.bien_capital}${avance !== null ? ` · avance ${avance}%` : ''}`, null, parteId);
     res.json({ ok: true, id: parteId });
   });
 });
@@ -1094,6 +1247,9 @@ app.post('/api/materiales', requiereLogin, (req, res) => {
       INSERT INTO materiales (destino, fecha, descripcion, cantidad, unidad, estado, notas, comprobante_archivo)
       VALUES (@destino, @fecha, @descripcion, @cantidad, @unidad, @estado, @notas, @comprobante_archivo)
     `).run({ ...datos, comprobante_archivo: req.file ? req.file.filename : null });
+    registrar(req, 'Operaciones', `Material ${String(datos.estado || '').toLowerCase() === 'comprado' ? 'comprado' : 'pedido'}`,
+      `${datos.descripcion}${datos.cantidad ? ` · ${datos.cantidad}${datos.unidad ? ' ' + datos.unidad : ''}` : ''}${datos.destino ? ` · ${datos.destino}` : ''}`,
+      null, info.lastInsertRowid);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
 });

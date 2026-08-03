@@ -424,6 +424,56 @@ body {
 .etiqueta-categoria { background: #eef0f3; color: var(--texto); font-weight: 600; }
 .etiqueta-alerta { background: #fef3c7; color: #92400e; }
 .etiqueta-ok { background: #e8f4ea; color: var(--verde); }
+
+/* ===== Pañol: cantidad editable con flechitas ===== */
+.control-cantidad { display: inline-flex; align-items: center; gap: 6px; }
+.cantidad-valor { min-width: 60px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cantidad-unidad { color: var(--texto-suave); font-size: 12px; font-weight: 400; }
+.btn-flecha {
+  width: 28px; height: 28px; padding: 0; flex-shrink: 0;
+  font-size: 17px; line-height: 1; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-flecha-mas { color: var(--verde); }
+.btn-flecha-menos { color: var(--rojo-hover); }
+.cantidad-input {
+  width: 68px; margin-top: 0; padding: 5px 6px;
+  text-align: center; font-weight: 700; font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid #cfd2d8; border-radius: 4px; font-family: inherit;
+  -moz-appearance: textfield;
+}
+.cantidad-input::-webkit-outer-spin-button,
+.cantidad-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cantidad-input:focus { outline: none; border-color: var(--rojo); box-shadow: 0 0 0 3px rgba(219, 13, 23, .13); }
+.fila-faltante td { background: #fffbeb; }
+.solo-faltantes { align-self: center; padding-bottom: 2px; }
+.filtro-inline { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.filtro-inline input { margin-top: 0; width: auto; }
+.desc-material { max-width: 340px; white-space: pre-line; font-size: 13px; color: var(--texto-suave); }
+
+/* ===== Actualizaciones ===== */
+.linea-tiempo { list-style: none; }
+.linea-tiempo li {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--blanco); border: 1px solid var(--borde);
+  border-left: 3px solid var(--rojo); border-radius: var(--radio);
+  padding: 11px 14px; margin-bottom: 8px;
+}
+.act-area {
+  flex-shrink: 0; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--rojo-hover); min-width: 96px; padding-top: 2px;
+}
+.act-cuerpo { flex: 1; min-width: 0; }
+.act-accion { font-weight: 600; font-size: 14px; }
+.act-detalle { font-size: 13.5px; }
+.act-meta { color: var(--texto-suave); font-size: 12px; margin-top: 2px; }
+.lista-novedades { list-style: none; }
+.lista-novedades li { padding: 8px 0; border-bottom: 1px solid var(--borde); font-size: 13.5px; }
+.lista-novedades li:last-child { border-bottom: none; }
+.panel-columnas-margen { margin-top: 14px; }
+.panel-columnas > * { min-width: 0; }
+.etiqueta-ok { background: #e8f4ea; color: var(--verde); }
 .celda-acciones { white-space: nowrap; }
 .texto-suave { color: var(--texto-suave); }
 .texto-ayuda { color: var(--texto-suave); font-size: 13px; margin-bottom: 12px; }
