@@ -265,6 +265,47 @@ asegurarColumna('usuarios', 'nombre', 'nombre TEXT');
 asegurarColumna('vales', 'tipo_combustible', 'tipo_combustible TEXT');
 asegurarColumna('vales', 'grado', 'grado TEXT');
 asegurarColumna('vales', 'monto', 'monto REAL');
+// Las cargas en bidones no van a un vehículo: se guarda el destino en texto
+asegurarColumna('vales', 'destino', 'destino TEXT');
+
+// Para permitir cargas sin vehículo hay que quitar el NOT NULL de vales.vehiculo_id.
+// SQLite no lo permite con ALTER TABLE, así que se recrea la tabla copiando los datos.
+const colVehiculoVale = db.prepare('PRAGMA table_info(vales)').all().find((c) => c.name === 'vehiculo_id');
+if (colVehiculoVale && colVehiculoVale.notnull === 1) {
+  const columnas = db.prepare('PRAGMA table_info(vales)').all().map((c) => c.name).join(', ');
+  db.exec('PRAGMA foreign_keys = OFF');
+  db.exec('BEGIN');
+  try {
+    db.exec(`
+      CREATE TABLE vales_nuevo (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        vehiculo_id INTEGER REFERENCES vehiculos(id),
+        fecha TEXT NOT NULL,
+        litros REAL NOT NULL CHECK (litros > 0),
+        numero_vale TEXT,
+        receptor TEXT,
+        observaciones TEXT,
+        foto_archivo TEXT,
+        creado_en TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+        tipo_combustible TEXT,
+        grado TEXT,
+        monto REAL,
+        destino TEXT
+      );
+      INSERT INTO vales_nuevo (${columnas}) SELECT ${columnas} FROM vales;
+      DROP TABLE vales;
+      ALTER TABLE vales_nuevo RENAME TO vales;
+      CREATE INDEX IF NOT EXISTS idx_vales_vehiculo ON vales(vehiculo_id);
+      CREATE INDEX IF NOT EXISTS idx_vales_fecha ON vales(fecha);
+    `);
+    db.exec('COMMIT');
+    console.log('Base actualizada: los vales ya pueden ser cargas en bidón (sin vehículo).');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    console.error('No se pudo migrar la tabla de vales:', e.message);
+  }
+  db.exec('PRAGMA foreign_keys = ON');
+}
 
 // Usuario administrador inicial. La contraseña se genera al azar en el primer
 // arranque y se muestra una sola vez: no puede quedar escrita en el código

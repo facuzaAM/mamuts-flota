@@ -347,7 +347,7 @@ function pintarSelectoresVehiculo() {
   if ($('#gasto-vehiculo')) $('#gasto-vehiculo').innerHTML = '<option value="">Ninguno</option>' + opciones;
   if ($('#filtro-vehiculo')) {
     const cur = $('#filtro-vehiculo').value;
-    $('#filtro-vehiculo').innerHTML = '<option value="">Todos</option>' + opciones;
+    $('#filtro-vehiculo').innerHTML = '<option value="">Todos</option><option value="bidon">Solo cargas en bidón</option>' + opciones;
     $('#filtro-vehiculo').value = cur;
   }
 }
@@ -358,10 +358,23 @@ async function cargarOpcionesVehiculos() {
 // ---------- Vehículos ----------
 async function cargarVehiculos() {
   const todos = $('#ver-inactivos').checked;
-  const filas = await api(`/api/vehiculos${todos ? '?todos=1' : ''}`);
+  if (!$('#filtro-mes-vehiculos').value) $('#filtro-mes-vehiculos').value = mesActualArgentina();
+  const mes = $('#filtro-mes-vehiculos').value || mesActualArgentina();
+  const params = new URLSearchParams({ mes });
+  if (todos) params.set('todos', '1');
+  const filas = await api('/api/vehiculos?' + params.toString());
   vehiculosCache = filas;
   opcionesVehiculos = filas.filter((v) => v.activo).map((v) => ({ id: v.id, patente: v.patente, marca: v.marca, modelo: v.modelo }));
   pintarSelectoresVehiculo();
+
+  // Los encabezados dicen de qué mes es el consumo que se está viendo
+  const nomMes = nombreMes(mes);
+  $('#th-vales-mes').textContent = `Vales (${nomMes})`;
+  $('#th-litros-mes').textContent = `Litros (${nomMes})`;
+  const totalMes = filas.reduce((s, v) => s + (v.total_litros || 0), 0);
+  $('#vehiculos-ayuda-mes').textContent = puede('ver_consumo_vehiculo')
+    ? `Consumo de ${nomMes}: ${formatearLitros(totalMes)} entre todos los vehículos.`
+    : '';
 
   $('#vehiculos-vacio').classList.toggle('oculto', filas.length > 0);
   $('#tabla-vehiculos tbody').innerHTML = filas.map((v) => `
@@ -375,6 +388,7 @@ async function cargarVehiculos() {
       <td>${escapar(v.chofer || '')}</td>
       <td class="num col-consumo">${v.cant_vales == null ? '' : v.cant_vales}</td>
       <td class="num col-consumo">${v.total_litros == null ? '' : formatearLitros(v.total_litros)}</td>
+      <td class="num col-consumo texto-suave">${v.litros_historico == null ? '' : formatearLitros(v.litros_historico)}</td>
       <td class="num celda-acciones">
         <button class="btn btn-chico btn-primario" data-ver="${v.id}">Ver</button>
         ${puede('editar_vehiculos') ? `<button class="btn btn-chico" data-editar="${v.id}">Editar</button>
@@ -384,6 +398,8 @@ async function cargarVehiculos() {
 }
 
 $('#ver-inactivos').addEventListener('change', cargarVehiculos);
+$('#filtro-mes-vehiculos').addEventListener('change', cargarVehiculos);
+$('#btn-mes-actual-vehiculos').addEventListener('click', () => { $('#filtro-mes-vehiculos').value = mesActualArgentina(); cargarVehiculos(); });
 $('#btn-nuevo-vehiculo').addEventListener('click', () => abrirModalVehiculo(null));
 
 $('#tabla-vehiculos').addEventListener('click', async (e) => {
@@ -456,13 +472,24 @@ $('#form-vehiculo').addEventListener('submit', async (e) => {
 });
 
 // ---------- Ficha del vehículo ----------
-async function abrirDetalleVehiculo(id) {
-  const d = await api(`/api/vehiculos/${id}`);
+async function abrirDetalleVehiculo(id, mes) {
+  const mesPedido = mes || $('#filtro-mes-vehiculos').value || mesActualArgentina();
+  const d = await api(`/api/vehiculos/${id}?mes=${encodeURIComponent(mesPedido)}`);
   detalleVehiculoId = id;
   const v = d.vehiculo;
 
   $('#detalle-titulo').textContent = `${v.patente} — ${v.marca} ${v.modelo}`;
   $('#detalle-litros-mes').textContent = d.litros_mes == null ? '–' : formatearLitros(d.litros_mes);
+  if ($('#detalle-litros-mes-label')) $('#detalle-litros-mes-label').textContent = `Litros de ${nombreMes(mesPedido)}`;
+  if (d.litros_por_mes) {
+    const anio = mesPedido.slice(0, 4);
+    $('#tit-detalle-por-mes').textContent = `Consumo mes a mes (${anio})`;
+    const total = d.litros_por_mes.reduce((s, m) => s + m.litros, 0);
+    $('#tabla-detalle-por-mes tbody').innerHTML = d.litros_por_mes.length
+      ? d.litros_por_mes.map((m) => `<tr${m.mes === mesPedido ? ' class="fila-total"' : ''}><td>${nombreMes(m.mes)}</td><td class="num">${m.cantidad}</td><td class="num">${formatearLitros(m.litros)}</td></tr>`).join('') +
+        `<tr class="fila-total"><td><strong>Total ${anio}</strong></td><td></td><td class="num"><strong>${formatearLitros(total)}</strong></td></tr>`
+      : `<tr><td colspan="3" class="texto-vacio">Sin consumo registrado en ${anio}</td></tr>`;
+  }
   $('#detalle-cant-vales').textContent = d.cant_vales == null ? '–' : d.cant_vales;
   $('#detalle-litros').textContent = d.total_litros == null ? '–' : formatearLitros(d.total_litros);
 
@@ -568,7 +595,9 @@ async function cargarVales() {
   $('#tabla-vales tbody').innerHTML = filas.map((v) => `
     <tr>
       <td>${formatearFecha(v.fecha)}</td>
-      <td>${escapar(v.marca)} ${escapar(v.modelo)} · <strong>${escapar(v.patente)}</strong></td>
+      <td>${v.patente
+        ? `${escapar(v.marca)} ${escapar(v.modelo)} · <strong>${escapar(v.patente)}</strong>`
+        : `<span class="etiqueta etiqueta-bidon">BIDÓN</span> ${escapar(v.destino || '')}`}</td>
       <td>${escapar([v.tipo_combustible, v.grado].filter(Boolean).join(' ') || '')}</td>
       <td class="num"><strong>${formatearLitros(v.litros)}</strong></td>
       <td class="num">${v.monto != null ? formatearDinero(v.monto) : ''}</td>
@@ -591,14 +620,26 @@ $('#tabla-vales').addEventListener('click', async (e) => {
   }
 });
 
+// La carga puede ser a un vehículo o a un bidón: se muestra el campo que corresponde
+function aplicarTipoDestinoVale() {
+  const esBidon = document.querySelector('input[name="vale-destino-tipo"]:checked').value === 'bidon';
+  $('#vale-vehiculo-caja').classList.toggle('oculto', esBidon);
+  $('#vale-bidon-caja').classList.toggle('oculto', !esBidon);
+  $('#vale-vehiculo').required = !esBidon;
+  $('#btn-guardar-vale').textContent = esBidon ? 'Guardar carga' : 'Guardar vale';
+}
+document.querySelectorAll('input[name="vale-destino-tipo"]').forEach((r) => r.addEventListener('change', aplicarTipoDestinoVale));
+
 $('#btn-nuevo-vale').addEventListener('click', async () => {
   if (!opcionesVehiculos.length) await cargarOpcionesVehiculos();
-  if (!opcionesVehiculos.length) { aviso('Primero tiene que haber un vehículo cargado'); return; }
   $('#form-vale').reset();
   $('#vale-fecha').value = fechaISOArgentina();
   $('#vale-monto-hint').textContent = '';
   $('#vale-foto-preview').classList.add('oculto');
   $('#vale-error').classList.add('oculto');
+  // Si todavía no hay vehículos cargados, arranca directamente en modo bidón
+  if (!opcionesVehiculos.length) document.querySelector('input[name="vale-destino-tipo"][value="bidon"]').checked = true;
+  aplicarTipoDestinoVale();
   $('#modal-vale').showModal();
 });
 
@@ -623,8 +664,15 @@ $('#form-vale').addEventListener('submit', async (e) => {
   const btn = $('#btn-guardar-vale');
   btn.disabled = true;
   try {
+    const esBidon = document.querySelector('input[name="vale-destino-tipo"]:checked').value === 'bidon';
+    if (!esBidon && !$('#vale-vehiculo').value) throw new Error('Elegí el vehículo al que se cargó');
     const datos = new FormData();
-    datos.append('vehiculo_id', $('#vale-vehiculo').value);
+    if (esBidon) {
+      datos.append('es_bidon', '1');
+      datos.append('destino', $('#vale-bidon').value.trim() || 'Bidón');
+    } else {
+      datos.append('vehiculo_id', $('#vale-vehiculo').value);
+    }
     datos.append('fecha', $('#vale-fecha').value);
     datos.append('litros', $('#vale-litros').value);
     datos.append('numero_vale', $('#vale-numero').value);
@@ -638,7 +686,7 @@ $('#form-vale').addEventListener('submit', async (e) => {
     if (archivo) datos.append('foto', archivo);
     await api('/api/vales', { method: 'POST', body: datos });
     $('#modal-vale').close();
-    aviso('Vale registrado correctamente');
+    aviso(esBidon ? 'Carga en bidón registrada' : 'Vale registrado correctamente');
     cargarVales();
   } catch (err) { mostrarError('#vale-error', err.message); }
   finally { btn.disabled = false; }
@@ -854,7 +902,7 @@ function dibujarMateriales() {
       <td><div class="desc-material">${escapar(m.descripcion || '')}</div></td>
       <td>${escapar(m.ubicacion || '')}</td>
       <td>${m.fecha_ingreso ? formatearFecha(m.fecha_ingreso) : ''}</td>
-      <td class="num">
+      <td class="num col-cantidad">
         <div class="control-cantidad">
           ${puedeEditar ? `<button class="btn btn-flecha btn-flecha-menos" data-mat-menos="${m.id}" title="Restar uno">−</button>
           <input type="number" class="cantidad-input" data-mat-cantidad="${m.id}" value="${m.cantidad}" min="0" step="1" title="Escribí la cantidad exacta">

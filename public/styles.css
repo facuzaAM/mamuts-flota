@@ -425,10 +425,23 @@ body {
 .etiqueta-alerta { background: #fef3c7; color: #92400e; }
 .etiqueta-ok { background: #e8f4ea; color: var(--verde); }
 
-/* ===== Pañol: cantidad editable con flechitas ===== */
-.control-cantidad { display: inline-flex; align-items: center; gap: 6px; }
-.cantidad-valor { min-width: 60px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
-.cantidad-unidad { color: var(--texto-suave); font-size: 12px; font-weight: 400; }
+/* ===== Pañol: cantidad editable con flechitas =====
+   Medidas fijas para que todos los controles queden alineados en columna,
+   sin importar cuántos dígitos tenga la cantidad */
+#tabla-materiales .col-cantidad { width: 196px; }
+.control-cantidad {
+  display: flex; align-items: center; gap: 6px;
+  justify-content: flex-end; white-space: nowrap;
+}
+.cantidad-valor {
+  width: 68px; flex: 0 0 68px; text-align: center;
+  font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.cantidad-unidad {
+  width: 52px; flex: 0 0 52px; text-align: left;
+  color: var(--texto-suave); font-size: 12px; font-weight: 400;
+  overflow: hidden; text-overflow: ellipsis;
+}
 .btn-flecha {
   width: 28px; height: 28px; padding: 0; flex-shrink: 0;
   font-size: 17px; line-height: 1; font-weight: 700;
@@ -437,7 +450,7 @@ body {
 .btn-flecha-mas { color: var(--verde); }
 .btn-flecha-menos { color: var(--rojo-hover); }
 .cantidad-input {
-  width: 68px; margin-top: 0; padding: 5px 6px;
+  width: 68px; flex: 0 0 68px; margin-top: 0; padding: 5px 6px;
   text-align: center; font-weight: 700; font-size: 15px;
   font-variant-numeric: tabular-nums;
   border: 1px solid #cfd2d8; border-radius: 4px; font-family: inherit;
@@ -473,6 +486,19 @@ body {
 .lista-novedades li:last-child { border-bottom: none; }
 .panel-columnas-margen { margin-top: 14px; }
 .panel-columnas > * { min-width: 0; }
+
+/* ===== Vale: elegir vehículo o bidón ===== */
+.opciones-destino {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  background: #fafafb; border: 1px solid var(--borde); border-radius: var(--radio);
+  padding: 10px 12px; margin-bottom: 16px;
+}
+.opcion-destino {
+  display: flex; align-items: center; gap: 7px;
+  font-weight: 400; font-size: 13.5px; cursor: pointer; margin: 0;
+}
+.opcion-destino input { width: auto; margin: 0; accent-color: var(--rojo); }
+.etiqueta-bidon { background: #e7effa; color: #1e40af; }
 .etiqueta-ok { background: #e8f4ea; color: var(--verde); }
 .celda-acciones { white-space: nowrap; }
 .texto-suave { color: var(--texto-suave); }

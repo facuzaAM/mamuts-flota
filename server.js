@@ -299,15 +299,18 @@ app.post('/api/cambiar-password', requiereLogin, (req, res) => {
 app.get('/api/vehiculos', requiereLogin, requierePermiso('ver_vehiculos'), (req, res) => {
   const incluirInactivos = req.query.todos === '1';
   const verConsumo = tiene(req, 'ver_consumo_vehiculo');
-  const inicioMes = inicioMesAR();
+  // El consumo se muestra por mes; sin parámetro, el mes en curso en Argentina
+  const mes = /^\d{4}-\d{2}$/.test(String(req.query.mes || '')) ? req.query.mes : hoyAR().slice(0, 7);
+  const [desde, hasta] = rangoMes(mes);
   const filas = db.prepare(`
     SELECT v.*,
-      (SELECT COUNT(*) FROM vales x WHERE x.vehiculo_id = v.id AND x.fecha >= @inicioMes) AS cant_vales,
-      (SELECT COALESCE(SUM(litros), 0) FROM vales x WHERE x.vehiculo_id = v.id AND x.fecha >= @inicioMes) AS total_litros
+      (SELECT COUNT(*) FROM vales x WHERE x.vehiculo_id = v.id AND x.fecha >= @desde AND x.fecha < @hasta) AS cant_vales,
+      (SELECT COALESCE(SUM(litros), 0) FROM vales x WHERE x.vehiculo_id = v.id AND x.fecha >= @desde AND x.fecha < @hasta) AS total_litros,
+      (SELECT COALESCE(SUM(litros), 0) FROM vales x WHERE x.vehiculo_id = v.id) AS litros_historico
     FROM vehiculos v
     ${incluirInactivos ? '' : 'WHERE v.activo = 1'}
     ORDER BY v.marca, v.modelo
-  `).all({ inicioMes });
+  `).all({ desde, hasta });
   // Si no puede ver el consumo, no le mandamos esos datos
   res.json(filas.map((v) => verConsumo ? v : ({ ...v, cant_vales: null, total_litros: null })));
 });
@@ -329,8 +332,15 @@ app.get('/api/vehiculos/:id', requiereLogin, requierePermiso('ver_vehiculos'), (
   if (!verConsumo) return res.json({ vehiculo, tecnicos, vales: [], cant_vales: null, total_litros: null, litros_mes: null, sin_consumo: true });
   const vales = db.prepare('SELECT * FROM vales WHERE vehiculo_id = ? ORDER BY fecha DESC, id DESC LIMIT 5').all(vehiculo.id);
   const resumen = db.prepare('SELECT COUNT(*) AS cant_vales, COALESCE(SUM(litros), 0) AS total_litros FROM vales WHERE vehiculo_id = ?').get(vehiculo.id);
-  const mes = db.prepare('SELECT COALESCE(SUM(litros), 0) AS litros_mes FROM vales WHERE vehiculo_id = ? AND fecha >= ?').get(vehiculo.id, inicioMesAR());
-  res.json({ vehiculo, tecnicos, vales, ...resumen, litros_mes: mes.litros_mes });
+  // Consumo del mes pedido (o del mes en curso) y desglose mes a mes del año
+  const mesPedido = /^\d{4}-\d{2}$/.test(String(req.query.mes || '')) ? req.query.mes : hoyAR().slice(0, 7);
+  const [desdeMes, hastaMes] = rangoMes(mesPedido);
+  const mes = db.prepare('SELECT COALESCE(SUM(litros), 0) AS litros_mes FROM vales WHERE vehiculo_id = ? AND fecha >= ? AND fecha < ?').get(vehiculo.id, desdeMes, hastaMes);
+  const porMes = db.prepare(`
+    SELECT substr(fecha, 1, 7) AS mes, SUM(litros) AS litros, COUNT(*) AS cantidad
+    FROM vales WHERE vehiculo_id = ? AND fecha >= ? AND fecha <= ? GROUP BY mes ORDER BY mes
+  `).all(vehiculo.id, `${mesPedido.slice(0, 4)}-01-01`, `${mesPedido.slice(0, 4)}-12-31`);
+  res.json({ vehiculo, tecnicos, vales, ...resumen, mes: mesPedido, litros_mes: mes.litros_mes, litros_por_mes: porMes });
 });
 
 function validarVehiculo(body) {
@@ -747,12 +757,13 @@ app.delete('/api/gastos/:id', requiereLogin, requierePermiso('cargar_gastos'), (
 app.get('/api/vales', requiereLogin, requierePermiso('ver_vales'), (req, res) => {
   const cond = [];
   const params = {};
-  if (req.query.vehiculo) { cond.push('va.vehiculo_id = @vehiculo'); params.vehiculo = req.query.vehiculo; }
+  if (req.query.vehiculo === 'bidon') cond.push('va.vehiculo_id IS NULL');
+  else if (req.query.vehiculo) { cond.push('va.vehiculo_id = @vehiculo'); params.vehiculo = req.query.vehiculo; }
   if (req.query.desde) { cond.push('va.fecha >= @desde'); params.desde = req.query.desde; }
   if (req.query.hasta) { cond.push('va.fecha <= @hasta'); params.hasta = req.query.hasta; }
   const stmt = db.prepare(`
     SELECT va.*, ve.marca, ve.modelo, ve.patente
-    FROM vales va JOIN vehiculos ve ON ve.id = va.vehiculo_id
+    FROM vales va LEFT JOIN vehiculos ve ON ve.id = va.vehiculo_id
     ${cond.length ? 'WHERE ' + cond.join(' AND ') : ''}
     ORDER BY va.fecha DESC, va.id DESC
   `);
@@ -764,31 +775,39 @@ app.post('/api/vales', requiereLogin, requierePermiso('cargar_vales'), (req, res
     if (err) return res.status(400).json({ error: err.message });
     const { vehiculo_id, fecha, litros, numero_vale, receptor, observaciones, tipo_combustible, grado } = req.body || {};
     const litrosNum = parseFloat(litros);
-    if (!vehiculo_id || !fecha || !Number.isFinite(litrosNum) || litrosNum <= 0) {
+    // Una carga puede ir a un vehículo o a un bidón/tambor (sin vehículo)
+    const esBidon = String(req.body.es_bidon || '') === '1' || !vehiculo_id;
+    if (!fecha || !Number.isFinite(litrosNum) || litrosNum <= 0) {
       if (req.file) borrarAdjunto(req.file.filename);
-      return res.status(400).json({ error: 'Vehículo, fecha y litros (mayor a 0) son obligatorios' });
+      return res.status(400).json({ error: 'La fecha y los litros (mayor a 0) son obligatorios' });
     }
-    const vehiculo = db.prepare('SELECT id FROM vehiculos WHERE id = ?').get(vehiculo_id);
-    if (!vehiculo) {
-      if (req.file) borrarAdjunto(req.file.filename);
-      return res.status(400).json({ error: 'El vehículo seleccionado no existe' });
+    let vehiculo = null;
+    if (!esBidon) {
+      vehiculo = db.prepare('SELECT id, patente FROM vehiculos WHERE id = ?').get(vehiculo_id);
+      if (!vehiculo) {
+        if (req.file) borrarAdjunto(req.file.filename);
+        return res.status(400).json({ error: 'Elegí un vehículo o marcá que la carga es en bidón' });
+      }
     }
+    const destino = esBidon ? (String(req.body.destino || '').trim() || 'Bidón') : null;
     const montoNum = parseFloat(req.body.monto);
     const info = db.prepare(`
-      INSERT INTO vales (vehiculo_id, fecha, litros, numero_vale, receptor, observaciones, foto_archivo, tipo_combustible, grado, monto)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO vales (vehiculo_id, fecha, litros, numero_vale, receptor, observaciones, foto_archivo, tipo_combustible, grado, monto, destino)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      vehiculo_id, fecha, litrosNum,
+      esBidon ? null : vehiculo.id, fecha, litrosNum,
       String(numero_vale || '').trim() || null,
       String(receptor || '').trim() || null,
       String(observaciones || '').trim() || null,
       req.file ? req.file.filename : null,
       String(tipo_combustible || '').trim() || null,
       String(grado || '').trim() || null,
-      Number.isFinite(montoNum) && montoNum > 0 ? montoNum : null
+      Number.isFinite(montoNum) && montoNum > 0 ? montoNum : null,
+      destino
     );
-    const patente = db.prepare('SELECT patente FROM vehiculos WHERE id = ?').get(vehiculo_id).patente;
-    registrar(req, 'Combustible', 'Vale registrado', `${patente} · ${litrosNum} L${Number.isFinite(montoNum) && montoNum > 0 ? ' · $' + montoNum : ''}`, 'ver_vales', info.lastInsertRowid);
+    const quien = esBidon ? destino : vehiculo.patente;
+    registrar(req, 'Combustible', esBidon ? 'Carga en bidón registrada' : 'Vale registrado',
+      `${quien} · ${litrosNum} L${Number.isFinite(montoNum) && montoNum > 0 ? ' · $' + montoNum : ''}`, 'ver_vales', info.lastInsertRowid);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
 });
@@ -938,7 +957,7 @@ app.get('/api/dashboard', requiereLogin, (req, res) => {
     d.vales_mes = db.prepare('SELECT COUNT(*) AS n FROM vales WHERE fecha >= ? AND fecha < ?').get(desde, hasta).n;
     d.ultimos_vales = db.prepare(`
       SELECT va.*, ve.marca, ve.modelo, ve.patente
-      FROM vales va JOIN vehiculos ve ON ve.id = va.vehiculo_id
+      FROM vales va LEFT JOIN vehiculos ve ON ve.id = va.vehiculo_id
       WHERE va.fecha >= ? AND va.fecha < ?
       ORDER BY va.fecha DESC, va.id DESC LIMIT 8
     `).all(desde, hasta);

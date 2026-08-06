@@ -145,16 +145,19 @@
         <div class="seccion-encabezado">
           <h2>Vehículos</h2>
           <div class="acciones">
+            <label class="filtro-inline" data-perm="ver_consumo_vehiculo">Consumo del mes <input type="month" id="filtro-mes-vehiculos"></label>
+            <button id="btn-mes-actual-vehiculos" class="btn btn-chico" data-perm="ver_consumo_vehiculo">Mes actual</button>
             <label class="check-inline"><input type="checkbox" id="ver-inactivos"> Mostrar dados de baja</label>
             <button id="btn-nuevo-vehiculo" class="btn btn-primario" data-perm="editar_vehiculos">+ Agregar vehículo</button>
           </div>
         </div>
+        <p class="texto-ayuda col-consumo" id="vehiculos-ayuda-mes"></p>
         <div class="tabla-scroll">
           <table class="tabla" id="tabla-vehiculos">
             <thead>
               <tr>
                 <th>Patente</th><th>Marca</th><th>Modelo</th><th>Año</th><th>Combustible</th>
-                <th>Propiedad</th><th>Chofer</th><th class="num col-consumo">Vales (mes)</th><th class="num col-consumo">Litros (mes)</th><th></th>
+                <th>Propiedad</th><th>Chofer</th><th class="num col-consumo" id="th-vales-mes">Vales (mes)</th><th class="num col-consumo" id="th-litros-mes">Litros (mes)</th><th class="num col-consumo">Litros (total)</th><th></th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -182,7 +185,7 @@
             <img id="detalle-foto" class="detalle-foto oculto" alt="Foto del vehículo">
             <div id="detalle-sin-foto" class="detalle-foto-vacia">Sin foto cargada.<br>Podés agregarla desde "Editar vehículo".</div>
             <div class="detalle-stats" data-perm="ver_consumo_vehiculo">
-              <div><span id="detalle-litros-mes">–</span><small>Litros este mes</small></div>
+              <div><span id="detalle-litros-mes">–</span><small id="detalle-litros-mes-label">Litros del mes</small></div>
               <div><span id="detalle-cant-vales">–</span><small>Vales (histórico)</small></div>
               <div><span id="detalle-litros">–</span><small>Litros (histórico)</small></div>
             </div>
@@ -204,6 +207,16 @@
             <tbody></tbody>
           </table>
           <p id="tecnicos-vacio" class="texto-vacio oculto">Sin datos técnicos cargados todavía.</p>
+        </div>
+
+        <div class="bloque bloque-margen" data-perm="ver_consumo_vehiculo">
+          <h3 id="tit-detalle-por-mes">Consumo mes a mes</h3>
+          <div class="tabla-scroll">
+            <table class="tabla" id="tabla-detalle-por-mes">
+              <thead><tr><th>Mes</th><th class="num">Vales</th><th class="num">Litros</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="bloque bloque-margen" data-perm="ver_consumo_vehiculo">
@@ -290,7 +303,7 @@
         <div class="tabla-scroll">
           <table class="tabla" id="tabla-materiales">
             <thead>
-              <tr><th>Material</th><th>Descripción</th><th>Ubicación</th><th>Ingreso</th><th class="num">Cantidad</th><th></th></tr>
+              <tr><th>Material</th><th>Descripción</th><th>Ubicación</th><th>Ingreso</th><th class="num col-cantidad">Cantidad</th><th></th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -543,8 +556,22 @@
   <dialog id="modal-vale">
     <form id="form-vale" method="dialog">
       <h3>Registrar vale de combustible</h3>
+      <div class="opciones-destino">
+        <label class="opcion-destino">
+          <input type="radio" name="vale-destino-tipo" value="vehiculo" checked>
+          <span>Carga a un <strong>vehículo</strong></span>
+        </label>
+        <label class="opcion-destino">
+          <input type="radio" name="vale-destino-tipo" value="bidon">
+          <span>Carga en <strong>bidón / tambor</strong> (sin vehículo)</span>
+        </label>
+      </div>
       <div class="grilla-2">
-        <label>Vehículo * <select id="vale-vehiculo" required></select></label>
+        <label id="vale-vehiculo-caja">Vehículo * <select id="vale-vehiculo"></select></label>
+        <label id="vale-bidon-caja" class="oculto">Identificación del bidón
+          <input type="text" id="vale-bidon" list="bidones" placeholder="Ej: Bidón 200 L obra Norte">
+          <datalist id="bidones"><option>Bidón 20 L</option><option>Bidón 200 L</option><option>Tambor 200 L</option><option>Tanque de obra</option><option>Grupo electrógeno</option></datalist>
+        </label>
         <label>Fecha de entrega * <input type="date" id="vale-fecha" required></label>
         <label>Litros * <input type="number" id="vale-litros" step="0.01" min="0.01" required placeholder="Ej: 50"></label>
         <label>Monto del vale (ARS)
